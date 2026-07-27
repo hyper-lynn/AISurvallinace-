@@ -1,0 +1,29 @@
+[project]
+name = "ShadowEYE"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Lynn Myat Aung", email = "lynnmyat49@gmail.com" }
+]
+dependencies = [
+    "flet[all]>=0.85.3",
+    "ollama>=0.6.2",
+]
+
+[dependency-groups]
+dev = [
+    "flet-cli>=0.85.3",
+    "flet-desktop>=0.85.3",
+    "flet-web>=0.85.3",
+]
+
+[tool.flet]
+org = "com.rangoonx.com"
+product = "Shadow EYE"
+company = "Rangoon X,Inc"
+copyright = "Copyright (C) 2026 by Rangoon X, Inc."
+
+[tool.flet.app]
+path = "src"
