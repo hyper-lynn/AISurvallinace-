@@ -92,7 +92,7 @@ def dashboardView():
         expand=True,
         content=ft.Column(
             expand=True,
-            scroll=ft.ScrollMode.AUTO,
+            scroll=ft.ScrollMode.HIDDEN,
             spacing=24,
             controls=[
                 # Header Section

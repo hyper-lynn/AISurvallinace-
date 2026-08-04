@@ -156,7 +156,7 @@ def AIChatOverlay():
                 )
             )
             media_controls.append(
-                ft.ElevatedButton(
+                ft.Button(
                     "Save Image",
                     icon=ft.Icons.DOWNLOAD_ROUNDED,
                     style=ft.ButtonStyle(padding=ft.Padding(10, 6, 10, 6)),
@@ -183,7 +183,7 @@ def AIChatOverlay():
                 )
             )
             media_controls.append(
-                ft.ElevatedButton(
+                ft.Button(
                     "Save Video",
                     icon=ft.Icons.DOWNLOAD_ROUNDED,
                     style=ft.ButtonStyle(padding=ft.Padding(10, 6, 10, 6)),

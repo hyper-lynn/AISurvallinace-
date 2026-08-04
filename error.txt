@@ -1,0 +1,12 @@
+[13:15:35] INFO     PC Webcam device index 0 verified working with backend 700.                                   camera_controller.py:114
+           ERROR    Telegram Polling Exception: HTTPSConnectionPool(host='api.telegram.org', port=443): Max        telegram_service.py:429
+                    retries exceeded with url:                                                                                            
+                    /bot8323993850:AAHrwE7rT3o9z5LN1m9wzGfVHCTNFmL6Osk/getUpdates?offset=1&timeout=6 (Caused by                           
+                    NameResolutionError("HTTPSConnection(host='api.telegram.org', port=443): Failed to resolve                            
+                    'api.telegram.org' ([Errno 11001] getaddrinfo failed)"))                                                              
+[13:15:40] ERROR    Telegram Polling Exception: HTTPSConnectionPool(host='api.telegram.org', port=443): Max        telegram_service.py:429
+                    retries exceeded with url:                                                                                            
+                    /bot8323993850:AAHrwE7rT3o9z5LN1m9wzGfVHCTNFmL6Osk/getUpdates?offset=1&timeout=6 (Caused by                           
+                    NameResolutionError("HTTPSConnection(host='api.telegram.org', port=443): Failed to resolve                            
+                    'api.telegram.org' ([Errno 11001] getaddrinfo failed)"))                                                              
+[13:15:42] INFO     Session was garbage collected: kq9fqmyvgt6rn30L

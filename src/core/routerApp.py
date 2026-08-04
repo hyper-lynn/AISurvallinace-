@@ -58,7 +58,7 @@ def ProtectedRoute(children: list, required_role: str = None):
                         f"Required role: {required_role}",
                         color=ft.Colors.ON_SURFACE_VARIANT,
                     ),
-                    ft.ElevatedButton(
+                    ft.Button(
                         "Go Back",
                         icon=ft.Icons.ARROW_BACK,
                         on_click=lambda _: page.navigate("/home"),
@@ -108,6 +108,7 @@ def routingApp():
     def update_theme_mode():
         logger.info(f"Theme mode changed to: {theme_mode}")
         ft.context.page.theme_mode = theme_mode
+        ft.context.page.scroll = None
 
     ft.on_updated(update_theme_mode, [theme_mode])
 

@@ -35,68 +35,51 @@ def rootLayout():
     # ─── Navigation Handler ─────────────────────────────────────────────────
     def on_nav_change(e):
         try:
-            route = NAV_ROUTES[e.control.selected_index]
+            idx = int(e.control.selected_index) if (hasattr(e.control, "selected_index") and e.control.selected_index is not None) else int(e.data)
+            route = NAV_ROUTES[idx]
             logger.info(f"Navigating to: {route}")
-            page.navigate(route)
+            page.go(route)
         except Exception as ex:
             logger.warning(f"Navigation error: {ex}")
-            page.navigate("/404")
+            try:
+                page.go("/dashboard")
+            except Exception:
+                pass
     
     # ─── Logout Handler ─────────────────────────────────────────────────────
     def on_logout_click(e):
         logger.info("Logout button clicked")
-        auth.logout()  #  Use auth context logout
+        auth.logout()
     
     # ─── User Info Display ──────────────────────────────────────────────────
     def build_user_chip():
-        """Profile Chip"""
+        """Profile Chip matching AEGIS ADM-01 Active status pill"""
         if not user:
             return ft.Container()
         
-        # This is the visible chip on the AppBar
         chip = ft.Container(
             content=ft.Row(
-                spacing=8,
+                spacing=6,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    # User avatar circle
-                    ft.CircleAvatar(
-                        content=ft.Text(
-                            user.user_name[0].upper(),
-                            color=ft.Colors.WHITE,
-                            weight=ft.FontWeight.BOLD
-                        ),
-                        bgcolor=ft.Colors.BLUE_700,
-                        radius=16,
-                    ),
-                    # User name and role
-                    ft.Column(
-                        spacing=0,
-                        alignment=ft.MainAxisAlignment.CENTER,
-                        controls=[
-                            ft.Text(
-                                user.user_name,
-                                color=ft.Colors.WHITE,
-                                size=13,
-                                weight=ft.FontWeight.W_500
-                            ),
-                            ft.Text(
-                                user.role.upper(),
-                                color=ft.Colors.WHITE_70,
-                                size=10,
-                            ),
-                        ],
+                    ft.Container(width=6, height=6, border_radius=3, bgcolor=ft.Colors.BLUE_400),
+                    ft.Text(
+                        f"{user.user_name[:6].upper()}-01 ACTIVE",
+                        color=ft.Colors.ON_SURFACE,
+                        size=11,
+                        weight=ft.FontWeight.BOLD
                     ),
                     ft.Icon(
                         ft.Icons.ARROW_DROP_DOWN_ROUNDED,
-                        color=ft.Colors.WHITE_70,
-                        size=18,
+                        color=ft.Colors.ON_SURFACE_VARIANT,
+                        size=16,
                     ),
                 ],
             ),
-            padding=ft.Padding.symmetric(horizontal=12, vertical=6),
-            border_radius=20,
-            bgcolor=ft.Colors.with_opacity(0.15, ft.Colors.WHITE),
+            padding=ft.Padding.symmetric(horizontal=10, vertical=4),
+            border_radius=16,
+            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+            border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT),
         )
         
         return ft.Container(
@@ -192,23 +175,75 @@ def rootLayout():
 
     ft.use_effect(listen_page_resize, [])
 
-    # Android Mobile / Small Screen Threshold Check (<= 768px width or <= 500px height)
-    is_mobile = page.platform in [ft.PagePlatform.ANDROID, ft.PagePlatform.IOS] or (screen_width <= 768) or (screen_height <= 500)
+    # Mobile threshold check (Android/iOS native platforms or narrow width < 600px)
+    is_mobile = page.platform in [ft.PagePlatform.ANDROID, ft.PagePlatform.IOS] or (screen_width < 600)
 
-    # ─── Original Theme Header AppBar ─────────────────────────────────────────
+    # ─── AEGIS Tactical Header AppBar ─────────────────────────────────────────
     app_bar = ft.AppBar(
-        title=AppText("app_title", variant="h1"),
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE,
+        title=ft.Row([
+            ft.Text("AEGIS SURVEILLANCE", size=17, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
+            ft.Row([
+                ft.Container(
+                    content=ft.Text("SYSTEM CENTER", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700 if selected == 0 else ft.Colors.ON_SURFACE_VARIANT),
+                    on_click=lambda _: page.go("/dashboard")
+                ),
+                ft.Container(
+                    content=ft.Text("DATA FEED", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700 if selected == 1 else ft.Colors.ON_SURFACE_VARIANT),
+                    on_click=lambda _: page.go("/live-monitor")
+                ),
+                ft.Container(
+                    content=ft.Text("NETWORK MAP", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700 if selected == 2 else ft.Colors.ON_SURFACE_VARIANT),
+                    on_click=lambda _: page.go("/about")
+                ),
+            ], spacing=18)
+        ], spacing=24, alignment=ft.MainAxisAlignment.START),
+        bgcolor=ft.Colors.SURFACE_CONTAINER_LOW,
         actions=[
             LanguageSwitcher(),
-            ft.VerticalDivider(color=ft.Colors.TRANSPARENT),
+            ft.IconButton(icon=ft.Icons.SHIELD_ROUNDED, icon_color=ft.Colors.BLUE_600, tooltip="Security System Active"),
+            ft.IconButton(icon=ft.Icons.LANGUAGE_ROUNDED, icon_color=ft.Colors.BLUE_600, tooltip="Network Status"),
             build_user_chip(),
             ft.VerticalDivider(color=ft.Colors.TRANSPARENT),
         ],
     )
 
-    # ─── Navigation Layout: Mobile (Bottom NavigationBar) vs Desktop (Side NavigationRail) ───
+    # Sidebar Network Load Progress Card
+    network_load_widget = ft.Container(
+        padding=10,
+        margin=ft.Margin(8, 0, 8, 12),
+        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+        border_radius=8,
+        border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT),
+        content=ft.Column([
+            ft.Text("NETWORK LOAD", size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.OUTLINE),
+            ft.ProgressBar(value=0.34, color=ft.Colors.BLUE_600, bgcolor=ft.Colors.SURFACE_CONTAINER),
+            ft.Row([
+                ft.Text("34%", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE_VARIANT),
+                ft.Text("1.2 GBPS", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE_VARIANT),
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        ], spacing=4)
+    )
+
+    # Footer Status Bar
+    footer_bar = ft.Container(
+        bgcolor=ft.Colors.SURFACE_CONTAINER_LOW,
+        padding=ft.Padding(16, 6, 16, 6),
+        border=ft.Border(top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT)),
+        content=ft.Row([
+            ft.Text("© 2024 AEGIS TACTICAL SYSTEMS. ALL RIGHTS RESERVED. CLASSIFIED MATERIAL.", size=9, color=ft.Colors.PRIMARY),
+            ft.Row([
+                ft.Row([
+                    ft.Container(width=6, height=6, border_radius=3, bgcolor=ft.Colors.BLUE_400),
+                    ft.Text("System Status: Operational", size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.PRIMARY)
+                ], spacing=4),
+                ft.Text("Legal Disclaimers", size=9, color=ft.Colors.OUTLINE),
+                ft.Text("Privacy Protocol", size=9, color=ft.Colors.OUTLINE),
+                ft.Text("Security Clearance", size=9, color=ft.Colors.OUTLINE),
+            ], spacing=14)
+        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+    )
+
+    # ─── Navigation Layout: Mobile vs Desktop ───
     if is_mobile:
         body_content = ft.Column(
             spacing=0,
@@ -247,6 +282,7 @@ def rootLayout():
                     ],
                     on_change=on_nav_change,
                 ),
+                footer_bar
             ],
         )
     else:
@@ -260,35 +296,42 @@ def rootLayout():
                     expand=True,
                     spacing=0,
                     controls=[
-                        ft.NavigationRail(
-                            selected_index=selected,
-                            label_type=ft.NavigationRailLabelType.ALL,
-                            bgcolor=ft.Colors.SURFACE_CONTAINER_LOW,
-                            destinations=[
-                                ft.NavigationRailDestination(
-                                    icon=ft.Icons.HOME_OUTLINED,
-                                    selected_icon=ft.Icons.DASHBOARD,
-                                    label=loc("nav_dashboard"),
-                                ),
-                                ft.NavigationRailDestination(
-                                    icon=ft.Icons.VIDEOCAM_OUTLINED,
-                                    selected_icon=ft.Icons.VIDEOCAM_ROUNDED,
-                                    label=loc("nav_live_monitor"),
-                                ),
-                                ft.NavigationRailDestination(
-                                    icon=ft.Icons.PERM_DEVICE_INFORMATION,
-                                    selected_icon=ft.Icons.PERM_DEVICE_INFORMATION,
-                                    label=loc("nav_about"),
-                                ),
-                                ft.NavigationRailDestination(
-                                    icon=ft.Icons.SETTINGS_OUTLINED,
-                                    selected_icon=ft.Icons.SETTINGS,
-                                    label=loc("nav_settings"),
-                                ),
-                            ],
-                            on_change=on_nav_change,
-                        ),
+                        ft.Column([
+                            ft.NavigationRail(
+                                selected_index=selected,
+                                label_type=ft.NavigationRailLabelType.ALL,
+                                bgcolor=ft.Colors.SURFACE_CONTAINER_LOW,
+                                height=ft.context.page.height,
+                                min_width=150,
+                                destinations=[
+                                    ft.NavigationRailDestination(
+                                        icon=ft.Icons.GRID_VIEW_ROUNDED,
+                                        selected_icon=ft.Icons.DASHBOARD,
+                                        label="DASHBOARD",
+                                    ),
+                                    ft.NavigationRailDestination(
+                                        icon=ft.Icons.VIDEOCAM_OUTLINED,
+                                        selected_icon=ft.Icons.VIDEOCAM_ROUNDED,
+                                        label="LIVE MONITOR",
+                                    ),
+                                    ft.NavigationRailDestination(
+                                        icon=ft.Icons.INFO_OUTLINED,
+                                        selected_icon=ft.Icons.INFO,
+                                        label="SYSTEM INFO",
+                                    ),
+                                    ft.NavigationRailDestination(
+                                        icon=ft.Icons.SETTINGS_OUTLINED,
+                                        selected_icon=ft.Icons.SETTINGS,
+                                        label="SETTINGS",
+                                    ),
+                                ],
+                                on_change=on_nav_change,
+                                expand=True
+                            ),
+                            # network_load_widget
+                        ], expand=False, spacing=0),
                         ft.VerticalDivider(width=1),
+                        # ft.Text(f'{ft.context.page.route}')
                         ft.Container(
                             content=outlet,
                             expand=True,
@@ -296,6 +339,7 @@ def rootLayout():
                         ),
                     ],
                 ),
+                footer_bar
             ],
         )
 
@@ -311,4 +355,4 @@ def rootLayout():
             main_content,
             AIChatOverlay()
         ]
-    )
+    )

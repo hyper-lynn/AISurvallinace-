@@ -135,7 +135,7 @@ def aiChatView():
                 )
             )
             media_controls.append(
-                ft.ElevatedButton(
+                ft.Button(
                     "Save Image",
                     icon=ft.Icons.DOWNLOAD_ROUNDED,
                     style=ft.ButtonStyle(padding=ft.Padding(14, 8, 14, 8)),
@@ -162,7 +162,7 @@ def aiChatView():
                 )
             )
             media_controls.append(
-                ft.ElevatedButton(
+                ft.Button(
                     "Save Video",
                     icon=ft.Icons.DOWNLOAD_ROUNDED,
                     style=ft.ButtonStyle(padding=ft.Padding(14, 8, 14, 8)),

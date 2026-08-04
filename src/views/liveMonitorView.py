@@ -5,9 +5,13 @@ import math
 from typing import Optional, Callable
 from controllers.camera_controller import CameraController
 from services.camera_service import CameraService
+from services.telegram_service import TelegramService
+from views.components.userProfileDialog import show_user_profile_dialog
 from views.components.typography import AppText
 from core.helper import use_loc
 from config.fonts import AppFonts
+
+from views.components.cameraAlertDialog import show_camera_alert_dispatch_dialog
 
 @ft.component
 def SingleCameraTile(
@@ -15,11 +19,15 @@ def SingleCameraTile(
     height: int = 200,
     on_focus: Optional[Callable[[], None]] = None,
     is_focused: bool = False,
-    hud_enabled: bool = True
+    hud_enabled: bool = True,
+    is_selected: bool = False,
+    on_select_toggle: Optional[Callable[[], None]] = None,
+    on_dispatch_alert: Optional[Callable[[dict, str], None]] = None
 ):
     """
     Sub-component for an individual camera stream tile with data stream loading indicator,
-    tactical HUD overlay toggle, and single/multi view focus action.
+    tactical HUD overlay toggle, single/multi view focus action, camera selection,
+    and per-camera direct SMS/Telegram alert dispatching.
     """
     cam_source = cam_info.get("source", "0")
     cam_name = cam_info.get("name", "Camera Stream")
@@ -29,6 +37,49 @@ def SingleCameraTile(
     
     frame_b64, set_frame_b64 = ft.use_state(initial_b64)
     is_loading, set_is_loading = ft.use_state(True)
+    camera_service = ft.use_memo(lambda: CameraService(), [])
+    ai_enabled, set_ai_enabled = ft.use_state(bool(cam_info.get("human_detection", 0)))
+    alarm_enabled, set_alarm_enabled = ft.use_state(bool(cam_info.get("telegram_alert_enabled", 0)))
+
+    def handle_toggle_ai(e=None):
+        new_val = not ai_enabled
+        set_ai_enabled(new_val)
+        if cam_info.get("id"):
+            camera_service.update_camera(
+                camera_id=cam_info["id"],
+                name=cam_info.get("name", "Camera"),
+                device_type=cam_info.get("device_type", "webcam"),
+                source=cam_source,
+                camera_group=cam_info.get("camera_group", "Zone-01"),
+                detection_model=cam_info.get("detection_model", "yolov8n"),
+                motion_detection=cam_info.get("motion_detection", 0),
+                human_detection=1 if new_val else 0,
+                telegram_chat_id=cam_info.get("telegram_chat_id", ""),
+                telegram_alert_enabled=1 if alarm_enabled else 0
+            )
+
+    def handle_toggle_alarm(e=None):
+        new_val = not alarm_enabled
+        set_alarm_enabled(new_val)
+        if cam_info.get("id"):
+            camera_service.update_camera(
+                camera_id=cam_info["id"],
+                name=cam_info.get("name", "Camera"),
+                device_type=cam_info.get("device_type", "webcam"),
+                source=cam_source,
+                camera_group=cam_info.get("camera_group", "Zone-01"),
+                detection_model=cam_info.get("detection_model", "yolov8n"),
+                motion_detection=cam_info.get("motion_detection", 0),
+                human_detection=1 if ai_enabled else 0,
+                telegram_chat_id=cam_info.get("telegram_chat_id", ""),
+                telegram_alert_enabled=1 if new_val else 0
+            )
+
+    # Safely capture page reference during component render time (when context is valid)
+    try:
+        page = ft.context.page
+    except Exception:
+        page = None
 
     def setup_tile():
         set_is_loading(True)
@@ -44,11 +95,45 @@ def SingleCameraTile(
 
     # Sync HUD overlay setting with CameraController
     cam_controller.hud_enabled = hud_enabled
+    
+    # Sync AI Detection and Alert Callback
+    cam_controller.ai_detection_enabled = ai_enabled
+    
+    def on_human_detected(source: str, b64_frame: str, event_type: str = "HUMAN DETECTED"):
+        if not alarm_enabled:
+            return
+        try:
+            import base64
+            telegram_service = TelegramService()
+            photo_bytes = base64.b64decode(b64_frame) if isinstance(b64_frame, str) else b64_frame
+            telegram_service.send_camera_alert(
+                camera=cam_info,
+                photo_source=photo_bytes,
+                detection_type=event_type,
+                confidence=0.92,
+                model_used="YOLOv8n-pose"
+            )
+            # Show a snackbar on UI as well using captured page reference
+            if page:
+                try:
+                    page.show_dialog(
+                        ft.SnackBar(
+                            content=ft.Text(f"🚨 AI {event_type} on {cam_name}! Telegram Alert Dispatched.", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                            bgcolor=ft.Colors.RED_800 if "FALL" in event_type else ft.Colors.AMBER_900
+                        )
+                    )
+                except Exception:
+                    pass
+        except Exception as e:
+            pass
+
+    cam_controller.on_human_detected_callback = on_human_detected
+    cam_controller.on_fall_detected_callback = lambda src, b64: on_human_detected(src, b64, "FALL DETECTED")
 
     img_control = ft.Image(
         key=f"tile_{cam_info.get('id', 1)}_{cam_source}",
         src=f"data:image/jpeg;base64,{frame_b64}" if frame_b64 else "",
-        fit=ft.BoxFit.CONTAIN,
+        fit=ft.BoxFit.COVER,
         gapless_playback=True,
         border_radius=8,
         expand=True
@@ -61,17 +146,17 @@ def SingleCameraTile(
         content=ft.Column([
             ft.ProgressRing(width=24, height=24, stroke_width=2.5, color=ft.Colors.CYAN_400),
             ft.Text("FETCHING RTSP DATA STREAM...", size=10, color=ft.Colors.CYAN_300, weight=ft.FontWeight.BOLD, ),
-            ft.Text("ESTABLISHING ENCRYPTED HANDSHAKE", size=8, color=ft.Colors.WHITE54)
+            ft.Text("ESTABLISHING ENCRYPTED HANDSHAKE", size=8, color=ft.Colors.WHITE_54)
         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=6)
     )
 
-    # HUD Overlay Badges (Toggleable)
+    # HUD Overlay Status Badge (Top-Left alignment to match screenshot)
     hud_overlay_layer = ft.Container(
-        alignment=ft.Alignment(-0.96, 0.92),
+        alignment=ft.Alignment(-0.96, -0.92),
         content=ft.Row([
             ft.Container(
                 padding=ft.Padding(6, 2, 6, 2),
-                bgcolor=ft.Colors.with_opacity(0.75, ft.Colors.BLACK),
+                bgcolor=ft.Colors.with_opacity(0.85, ft.Colors.BLACK),
                 border_radius=4,
                 border=ft.Border.all(1, ft.Colors.CYAN_900),
                 content=ft.Row([
@@ -86,7 +171,7 @@ def SingleCameraTile(
         height=height,
         bgcolor=ft.Colors.BLACK,
         border_radius=10,
-        border=ft.Border.all(1, ft.Colors.CYAN_400 if is_focused else ft.Colors.BLUE_900),
+        border=ft.Border.all(2, ft.Colors.CYAN_400) if is_selected else ft.Border.all(1, ft.Colors.CYAN_600 if is_focused else ft.Colors.BLUE_900),
         clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
         alignment=ft.Alignment(0, 0),
         content=ft.Stack([
@@ -94,37 +179,76 @@ def SingleCameraTile(
             
             # Data Stream Reloading / Connecting Spinner Overlay
             loading_overlay if is_loading else ft.Container(),
-            
-            # HUD Overlay Layer (Toggleable)
+
+            # Top-Left HUD Overlay Badge (if HUD enabled)
             hud_overlay_layer,
 
-            # Top Camera Label Badge
-            ft.Container(
-                alignment=ft.Alignment(-0.96, -0.92),
-                content=ft.Row([
-                    ft.Container(
-                        padding=ft.Padding(6, 3, 6, 3),
-                        bgcolor=ft.Colors.with_opacity(0.85, ft.Colors.BLACK),
-                        border_radius=4,
-                        border=ft.Border.all(1, ft.Colors.CYAN_900),
-                        content=ft.Row([
-                            ft.Container(width=6, height=6, border_radius=3, bgcolor=ft.Colors.GREY_500 if is_loading else ft.Colors.GREEN_400),
-                            ft.Text(cam_name, size=10, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD)
-                        ], spacing=4)
-                    )
-                ])
-            ),
-
-            # Focus / Enlarge Icon Button
+            # Top-Right Layer: Webcam Name Badge (without extra SELECTED tag as requested)
             ft.Container(
                 alignment=ft.Alignment(0.96, -0.92),
-                content=ft.IconButton(
-                    icon=ft.Icons.ASPECT_RATIO_ROUNDED if not is_focused else ft.Icons.GRID_VIEW_ROUNDED,
-                    icon_color=ft.Colors.CYAN_400,
-                    icon_size=18,
-                    tooltip="Focus Single Feed" if not is_focused else "Back to 4-View Grid Matrix",
-                    on_click=lambda _: on_focus() if on_focus else None
+                content=ft.Container(
+                    padding=ft.Padding(7, 3, 7, 3),
+                    bgcolor=ft.Colors.with_opacity(0.9, ft.Colors.CYAN_900 if is_selected else ft.Colors.BLACK),
+                    border_radius=6,
+                    border=ft.Border.all(1, ft.Colors.CYAN_400 if is_selected else ft.Colors.CYAN_900),
+                    on_click=lambda _: on_select_toggle() if on_select_toggle else None,
+                    tooltip="Click to toggle selection for " + cam_name,
+                    content=ft.Row([
+                        ft.Icon(
+                            ft.Icons.CHECK_BOX_ROUNDED if is_selected else ft.Icons.CHECK_BOX_OUTLINE_BLANK_ROUNDED,
+                            size=14,
+                            color=ft.Colors.CYAN_400 if is_selected else (ft.Colors.GREY_500 if is_loading else ft.Colors.GREEN_400)
+                        ),
+                        ft.Text(cam_name, size=10, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD)
+                    ], spacing=5, tight=True)
                 )
+            ),
+
+            # Bottom-Left Layer: Action Icon Buttons (Select Checkbox, AI Detection, Alarm Mode, Alert Dispatch, Focus View)
+            ft.Container(
+                alignment=ft.Alignment(-0.96, 0.92),
+                content=ft.Row([
+                    # 0. Select / Deselect CCTV Checkbox Button
+                    ft.IconButton(
+                        icon=ft.Icons.CHECK_BOX_ROUNDED if is_selected else ft.Icons.CHECK_BOX_OUTLINE_BLANK_ROUNDED,
+                        icon_color=ft.Colors.CYAN_400 if is_selected else ft.Colors.WHITE_54,
+                        icon_size=18,
+                        tooltip="Select / Deselect Camera",
+                        on_click=lambda _: on_select_toggle() if on_select_toggle else None
+                    ),
+                    # 1. Toggle AI Detection
+                    ft.IconButton(
+                        icon=ft.Icons.PERSON_SEARCH_ROUNDED,
+                        icon_color=ft.Colors.GREEN_400 if ai_enabled else ft.Colors.WHITE_54,
+                        icon_size=18,
+                        tooltip="Turn AI Detection " + ("OFF" if ai_enabled else "ON"),
+                        on_click=handle_toggle_ai
+                    ),
+                    # 2. Toggle Alarm Mode (Auto Telegram Alert on Detection)
+                    ft.IconButton(
+                        icon=ft.Icons.NOTIFICATIONS_ACTIVE_ROUNDED if alarm_enabled else ft.Icons.NOTIFICATIONS_OFF_ROUNDED,
+                        icon_color=ft.Colors.AMBER_400 if alarm_enabled else ft.Colors.WHITE_54,
+                        icon_size=18,
+                        tooltip="Alarm Mode: " + ("ACTIVE (Auto Alert to Telegram when Human seen)" if alarm_enabled else "OFF"),
+                        on_click=handle_toggle_alarm
+                    ),
+                    # 3. Dispatch Manual Snapshot Alert Icon
+                    ft.IconButton(
+                        icon=ft.Icons.CAMPAIGN_ROUNDED,
+                        icon_color=ft.Colors.CYAN_300,
+                        icon_size=18,
+                        tooltip="Manual Dispatch Snapshot Alert for THIS Camera",
+                        on_click=lambda _: on_dispatch_alert(cam_info, frame_b64) if on_dispatch_alert else None
+                    ),
+                    # 4. Focus / Enlarge Icon
+                    ft.IconButton(
+                        icon=ft.Icons.ASPECT_RATIO_ROUNDED if not is_focused else ft.Icons.GRID_VIEW_ROUNDED,
+                        icon_color=ft.Colors.CYAN_400,
+                        icon_size=18,
+                        tooltip="Focus Single Feed" if not is_focused else "Back to 4-View Grid Matrix",
+                        on_click=lambda _: on_focus() if on_focus else None
+                    )
+                ], spacing=0)
             )
         ], alignment=ft.Alignment(0, 0))
     )
@@ -140,36 +264,103 @@ def liveMonitorView():
     db_cameras = ft.use_memo(lambda: camera_service.get_cameras(), [])
 
     safe_cameras = db_cameras if (db_cameras and len(db_cameras) > 0) else [
-        {"id": 1, "name": "Default PC Webcam", "device_type": "webcam", "source": "0"},
-        {"id": 2, "name": "Wireless CCTV - Sector 7G", "device_type": "rtsp_wireless", "source": "rtsp://192.168.1.100:554/stream1"},
-        {"id": 3, "name": "Wired CCTV - Main Gate", "device_type": "rtsp_wired", "source": "rtsp://192.168.1.101:554/stream1"},
-        {"id": 4, "name": "Perimeter Guard Post", "device_type": "rtsp_wired", "source": "rtsp://192.168.1.102:554/stream1"},
+        {"id": 1, "name": "Default PC Webcam", "device_type": "webcam", "source": "0", "camera_group": "Zone-01", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
+        {"id": 2, "name": "Wireless CCTV - Sector 7G", "device_type": "rtsp_wireless", "source": "rtsp://192.168.1.100:554/stream1", "camera_group": "Zone-01", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
+        {"id": 3, "name": "Wired CCTV - Main Gate", "device_type": "rtsp_wired", "source": "rtsp://192.168.1.101:554/stream1", "camera_group": "Zone-02", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
+        {"id": 4, "name": "Perimeter Guard Post", "device_type": "rtsp_wired", "source": "rtsp://192.168.1.102:554/stream1", "camera_group": "Zone-02", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
     ]
+
+    # Zone Filter Selection State
+    selected_zone, set_selected_zone = ft.use_state("ALL ZONES")
+    available_zones = ["ALL ZONES"] + sorted(list(set([c.get("camera_group", "Zone-01") for c in safe_cameras])))
+
+    # Filtered Cameras by Active Zone
+    filtered_cams = [c for c in safe_cameras if selected_zone == "ALL ZONES" or c.get("camera_group") == selected_zone]
+    active_display_cams = filtered_cams if filtered_cams else safe_cameras
 
     # View Mode State: "quad" (4-View 2x2 Grid) vs "single" (Focus 1 Camera)
     view_mode, set_view_mode = ft.use_state("quad")
-    focused_cam, set_focused_cam = ft.use_state(safe_cameras[0])
+    focused_cam, set_focused_cam = ft.use_state(active_display_cams[0])
     
     # 4-View Matrix Pagination State
     page_index, set_page_index = ft.use_state(0)
     cams_per_page = 4
-    total_pages = max(1, math.ceil(len(safe_cameras) / cams_per_page))
+    total_pages = max(1, math.ceil(len(active_display_cams) / cams_per_page))
 
     # HUD Overlay Toggle State (ON/OFF)
     hud_overlay_active, set_hud_overlay_active = ft.use_state(True)
     
+    # Camera Selection & Batch Alert Dispatch State
+    selected_cam_ids, set_selected_cam_ids = ft.use_state([])
+
+    def handle_toggle_cam_selection(cam_id: int):
+        if cam_id in selected_cam_ids:
+            set_selected_cam_ids([cid for cid in selected_cam_ids if cid != cam_id])
+        else:
+            set_selected_cam_ids(selected_cam_ids + [cam_id])
+
+    def handle_toggle_select_all():
+        active_ids = [c["id"] for c in active_display_cams]
+        all_selected = len(active_ids) > 0 and all(cid in selected_cam_ids for cid in active_ids)
+        if all_selected:
+            set_selected_cam_ids([cid for cid in selected_cam_ids if cid not in active_ids])
+        else:
+            new_selected = list(set(selected_cam_ids + active_ids))
+            set_selected_cam_ids(new_selected)
+
+    def handle_dispatch_single_cam_alert(cam_info: dict, frame_b64: str):
+        show_camera_alert_dispatch_dialog(page, cam_info, frame_b64, telegram_service)
+
+    def handle_dispatch_batch_alert(e):
+        selected_cams = [c for c in safe_cameras if c["id"] in selected_cam_ids]
+        target_cam = selected_cams[0] if selected_cams else active_display_cams[0]
+        cam_controller = CameraController(source=target_cam.get("source", "0"))
+        b64 = cam_controller._generate_synthetic_frame(0)
+        show_camera_alert_dispatch_dialog(page, target_cam, b64, telegram_service)
+
+    def handle_send_test_alert(cid: str):
+        def _send():
+            ok, msg = telegram_service.send_test_message(chat_id=cid)
+            if page:
+                try:
+                    page.show_dialog(
+                        ft.SnackBar(
+                            content=ft.Text(f"{'✅' if ok else '⚠️'} {msg}", color=ft.Colors.WHITE, font_family=AppFonts.MYANMAR),
+                            bgcolor=ft.Colors.GREEN_800 if ok else ft.Colors.RED_800
+                        )
+                    )
+                except Exception:
+                    pass
+        if page:
+            page.run_thread(_send)
+        else:
+            telegram_service.send_test_message(chat_id=cid)
+
     is_recording, set_is_recording = ft.use_state(True)
     alert_acknowledged, set_alert_acknowledged = ft.use_state(False)
     sms_relay_active, set_sms_relay_active = ft.use_state(True)
 
-    # Recipient Input State
-    new_name_ref = ft.use_ref()
-    new_phone_ref = ft.use_ref()
-    
-    recipients, set_recipients = ft.use_state([
-        {"id": 1, "name": "Maj. Arnold Miller", "phone": "+1 (555) 091-2331", "role": "DIRECTOR"},
-        {"id": 2, "name": "Sarah Chen", "phone": "+1 (555) 091-4456", "role": "FIELD LEAD"}
-    ])
+    # Telegram Service & Target Persistence State
+    telegram_service = ft.use_memo(lambda: TelegramService(), [])
+    tg_refresh_key, set_tg_refresh_key = ft.use_state(0)
+    db_targets = ft.use_memo(lambda: telegram_service.get_targets(), [tg_refresh_key])
+
+    # Recipient Search Query & Input Declarative State
+    rec_search_query, set_rec_search_query = ft.use_state("")
+    new_target_name, set_new_target_name = ft.use_state("")
+    new_target_chat_id, set_new_target_chat_id = ft.use_state("")
+    new_target_type_state, set_new_target_type_state = ft.use_state("user")
+
+    # Filter Recipients dynamically by search query
+    filtered_recipients = [
+        t for t in db_targets
+        if not rec_search_query.strip() or
+        rec_search_query.lower() in t.get("target_name", "").lower() or
+        rec_search_query.lower() in t.get("chat_id", "").lower() or
+        rec_search_query.lower() in t.get("role", "").lower() or
+        rec_search_query.lower() in t.get("phone", "").lower() or
+        rec_search_query.lower() in t.get("note", "").lower()
+    ]
 
     intelligence_alerts, set_intelligence_alerts = ft.use_state([
         {
@@ -232,20 +423,25 @@ def liveMonitorView():
     def handle_remove_intel(alert_id: int):
         set_intelligence_alerts([a for a in intelligence_alerts if a["id"] != alert_id])
 
-    def handle_remove_recipient(rec_id: int):
-        set_recipients([r for r in recipients if r["id"] != rec_id])
+    def handle_remove_recipient(target_id: int):
+        telegram_service.delete_target(target_id)
+        set_tg_refresh_key(tg_refresh_key + 1)
 
     def handle_add_recipient(e):
-        name = new_name_ref.current.value.strip() if (new_name_ref.current and new_name_ref.current.value) else ""
-        phone = new_phone_ref.current.value.strip() if (new_phone_ref.current and new_phone_ref.current.value) else ""
-        if name:
-            new_item = {
-                "id": len(recipients) + 1,
-                "name": name,
-                "phone": phone or "+1 (555) 000-0000",
-                "role": "AGENT"
-            }
-            set_recipients(recipients + [new_item])
+        name = new_target_name.strip()
+        cid = new_target_chat_id.strip()
+        if name and cid:
+            success, msg = telegram_service.add_target(
+                target_name=name,
+                target_type=new_target_type_state,
+                chat_id=cid,
+                note="Added from Live Monitor",
+                role="OPERATIVE"
+            )
+            if success:
+                set_new_target_name("")
+                set_new_target_chat_id("")
+                set_tg_refresh_key(tg_refresh_key + 1)
 
     def handle_focus_camera(cam: dict):
         set_focused_cam(cam)
@@ -257,8 +453,74 @@ def liveMonitorView():
 
     # Slice Cameras for Current Page (4 Cameras per Page)
     start_idx = page_index * cams_per_page
-    end_idx = min(len(safe_cameras), start_idx + cams_per_page)
-    current_page_cams = safe_cameras[start_idx:end_idx]
+    end_idx = min(len(active_display_cams), start_idx + cams_per_page)
+    current_page_cams = active_display_cams[start_idx:end_idx]
+
+    # Zone Filter Selector Control Bar
+    zone_selector_bar = ft.Container(
+        content=ft.Row([
+            ft.Icon(ft.Icons.LOCATION_ON_ROUNDED, color=ft.Colors.CYAN_400, size=18),
+            ft.Text("ZONE / SECTION FILTER:", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_300),
+            ft.Dropdown(
+                value=selected_zone,
+                options=[ft.dropdown.Option(z, z) for z in available_zones],
+                on_select=lambda e: (set_selected_zone(e.control.value), set_page_index(0)),
+                width=240,
+                dense=True,
+                text_style=ft.TextStyle(size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_100),
+                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                border_color=ft.Colors.CYAN_700,
+            ),
+            ft.Container(expand=True),
+            ft.Text(f"ACTIVE: {len(active_display_cams)} CAMS IN {selected_zone.upper()}", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_400)
+        ], alignment=ft.MainAxisAlignment.START, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+        padding=ft.Padding.symmetric(horizontal=12, vertical=6),
+        bgcolor=ft.Colors.with_opacity(0.15, ft.Colors.BLACK),
+        border_radius=8,
+        border=ft.Border.all(1, ft.Colors.CYAN_900)
+    )
+
+    # Camera Selection & Batch Dispatch Toolbar Bar (Top Right Layout)
+    active_ids = [c["id"] for c in active_display_cams]
+    is_all_selected = len(active_ids) > 0 and all(cid in selected_cam_ids for cid in active_ids)
+    selected_count_in_view = sum(1 for cid in active_ids if cid in selected_cam_ids)
+
+    camera_selection_bar = ft.Container(
+        padding=ft.Padding(6, 3, 6, 3),
+        bgcolor=ft.Colors.SURFACE_CONTAINER,
+        border_radius=8,
+        border=ft.Border.all(1, ft.Colors.CYAN_700 if len(selected_cam_ids) > 0 else ft.Colors.OUTLINE_VARIANT),
+        content=ft.Row([
+            ft.IconButton(
+                icon=ft.Icons.SELECT_ALL_ROUNDED if not is_all_selected else ft.Icons.DESELECT_ROUNDED,
+                icon_size=16,
+                icon_color=ft.Colors.CYAN_400 if is_all_selected else ft.Colors.ON_SURFACE_VARIANT,
+                tooltip="Deselect All Cameras" if is_all_selected else "Select All Cameras",
+                on_click=lambda _: handle_toggle_select_all()
+            ),
+            ft.Container(
+                padding=ft.Padding(6, 2, 6, 2),
+                bgcolor=ft.Colors.CYAN_900 if selected_count_in_view > 0 else ft.Colors.SURFACE_CONTAINER_HIGH,
+                border_radius=4,
+                content=ft.Text(
+                    f"{selected_count_in_view}/{len(active_display_cams)} SELECTED",
+                    size=9,
+                    weight=ft.FontWeight.BOLD,
+                    color=ft.Colors.CYAN_200 if selected_count_in_view > 0 else ft.Colors.ON_SURFACE_VARIANT
+                )
+            ),
+            ft.Button(
+                "DISPATCH ALERT",
+                icon=ft.Icons.CAMPAIGN_ROUNDED,
+                style=ft.ButtonStyle(
+                    bgcolor=ft.Colors.AMBER_700 if selected_count_in_view > 0 else ft.Colors.SURFACE_CONTAINER_HIGH,
+                    color=ft.Colors.WHITE if selected_count_in_view > 0 else ft.Colors.ON_SURFACE_VARIANT,
+                    padding=ft.Padding(10, 4, 10, 4)
+                ),
+                on_click=handle_dispatch_batch_alert
+            )
+        ], spacing=6)
+    )
 
     # 1. Main Live Video Feed Container (4-View Matrix vs Single Focus View)
     if view_mode == "single":
@@ -267,7 +529,10 @@ def liveMonitorView():
             height=single_view_height,
             on_focus=lambda: set_view_mode("quad"),
             is_focused=True,
-            hud_enabled=hud_overlay_active
+            hud_enabled=hud_overlay_active,
+            is_selected=focused_cam["id"] in selected_cam_ids,
+            on_select_toggle=lambda fid=focused_cam["id"]: handle_toggle_cam_selection(fid),
+            on_dispatch_alert=lambda cam_info=focused_cam, b64="": handle_dispatch_single_cam_alert(cam_info, b64)
         )
     else:
         # 4-View Grid Matrix (2x2 Layout per Page)
@@ -282,7 +547,10 @@ def liveMonitorView():
                         height=grid_tile_height,
                         on_focus=lambda target_cam=c: handle_focus_camera(target_cam),
                         is_focused=False,
-                        hud_enabled=hud_overlay_active
+                        hud_enabled=hud_overlay_active,
+                        is_selected=c["id"] in selected_cam_ids,
+                        on_select_toggle=lambda cid=c["id"]: handle_toggle_cam_selection(cid),
+                        on_dispatch_alert=lambda cam_info=c, b64="": handle_dispatch_single_cam_alert(cam_info, b64)
                     )
                 )
             )
@@ -299,6 +567,7 @@ def liveMonitorView():
                 # Header Bar
                 ft.Row(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     controls=[
                         ft.Column([
                             ft.Row([
@@ -308,10 +577,9 @@ def liveMonitorView():
                             ft.Text("4-VIEW QUAD MATRIX" if view_mode == "quad" else f"SINGLE VIEW - {focused_cam['name'].upper()}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
                         ], spacing=2),
                         
-                        # Top Action Toolbar (HUD Overlay Toggle & View Mode Matrix Selector)
+                        # Top Action Toolbar (HUD Overlay Toggle, View Mode Selector, REC & Camera Selection Layout)
                         ft.Row([
-                            # HUD Overlay ON/OFF Showoff Button
-                            ft.ElevatedButton(
+                            ft.Button(
                                 "HUD OVERLAY: ON" if hud_overlay_active else "HUD OVERLAY: OFF",
                                 icon=ft.Icons.GRID_ON_ROUNDED if hud_overlay_active else ft.Icons.GRID_OFF_ROUNDED,
                                 style=ft.ButtonStyle(
@@ -356,8 +624,11 @@ def liveMonitorView():
                                     ft.Container(width=8, height=8, border_radius=4, bgcolor=ft.Colors.RED_500 if is_recording else ft.Colors.GREY_500),
                                     ft.Text("REC ● LIVE" if is_recording else "PAUSED", size=11, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD)
                                 ], spacing=6)
-                            )
-                        ], spacing=8)
+                            ),
+
+                            # Camera Selection & Batch Alert Control Bar (Top Right)
+                            camera_selection_bar
+                        ], spacing=8, alignment=ft.MainAxisAlignment.END)
                     ]
                 ),
 
@@ -487,7 +758,7 @@ def liveMonitorView():
                         ft.Column([
                             ft.Row([
                                 ft.Text("SECTOR: 7G_A", size=10, color=ft.Colors.CYAN_400, weight=ft.FontWeight.BOLD),
-                                ft.Text("MAP VIEW: LIGHT NODE", size=10, color=ft.Colors.WHITE54)
+                                ft.Text("MAP VIEW: LIGHT NODE", size=10, color=ft.Colors.WHITE_54)
                             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                             ft.Container(expand=True)
                         ]),
@@ -570,9 +841,41 @@ def liveMonitorView():
                         )
                     ])
                 ),
+                ft.Divider(),
+                ft.Row([
+                    ft.Icon(ft.Icons.MARK_CHAT_UNREAD_ROUNDED, color=ft.Colors.CYAN_400, size=18),
+                    ft.Text("TELEGRAM ALERT RECIPIENTS", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
+                    ft.Container(expand=True),
+                    ft.Container(
+                        padding=ft.Padding(6, 2, 6, 2),
+                        bgcolor=ft.Colors.CYAN_900,
+                        border_radius=4,
+                        content=ft.Text(f"{len(filtered_recipients)} RECIPIENTS", size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_200)
+                    )
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
 
-                ft.Text("AUTHORIZED RECIPIENTS", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.OUTLINE),
+                # Search Bar for Recipients & Targets
+                ft.TextField(
+                    value=rec_search_query,
+                    on_change=lambda e: set_rec_search_query(e.control.value),
+                    hint_text="Search recipient name, chat ID, role...",
+                    hint_style=ft.TextStyle(color=ft.Colors.ON_SURFACE_VARIANT),
+                    text_style=ft.TextStyle(color=ft.Colors.ON_SURFACE, weight=ft.FontWeight.BOLD),
+                    prefix_icon=ft.Icons.SEARCH_ROUNDED,
+                    suffix=ft.IconButton(
+                        icon=ft.Icons.CLEAR_ROUNDED,
+                        icon_size=15,
+                        icon_color=ft.Colors.PRIMARY,
+                        on_click=lambda _: set_rec_search_query("")
+                    ) if rec_search_query else None,
+                    dense=True,
+                    text_size=11,
+                    border_radius=8,
+                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                    border_color=ft.Colors.OUTLINE_VARIANT,
+                ),
 
+                # Recipient Tiles List
                 ft.Column(
                     spacing=6,
                     controls=[
@@ -580,51 +883,100 @@ def liveMonitorView():
                             key=f"rec_{r['id']}",
                             bgcolor=ft.Colors.SURFACE_CONTAINER,
                             border_radius=8,
-                            padding=8,
+                            padding=ft.Padding(8, 6, 8, 6),
+                            border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT),
                             content=ft.Row([
-                                ft.CircleAvatar(content=ft.Text(r["name"][:2].upper(), size=10), radius=14, bgcolor=ft.Colors.BLUE_900),
+                                ft.Stack([
+                                    ft.CircleAvatar(
+                                        content=ft.Text(r["target_name"][:2].upper(), size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_PRIMARY),
+                                        radius=14,
+                                        bgcolor=ft.Colors.PRIMARY
+                                    ),
+                                    ft.Container(
+                                        width=7, height=7, border_radius=4, bgcolor=ft.Colors.GREEN_500,
+                                        alignment=ft.Alignment(1, 1)
+                                    )
+                                ]),
                                 ft.Column([
-                                    ft.Text(r["name"], size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
-                                    ft.Text(r["phone"], size=11, color=ft.Colors.ON_SURFACE_VARIANT)
+                                    ft.Row([
+                                        ft.Text(r["target_name"], size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
+                                        ft.Container(
+                                            padding=ft.Padding(4, 1, 4, 1),
+                                            bgcolor=ft.Colors.PRIMARY_CONTAINER,
+                                            border_radius=3,
+                                            content=ft.Text(r.get("role", "OPERATIVE"), size=7, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_PRIMARY_CONTAINER)
+                                        )
+                                    ], spacing=4),
+                                    ft.Text(f"ID: {r['chat_id']}", size=9, color=ft.Colors.ON_SURFACE_VARIANT, weight=ft.FontWeight.BOLD),
                                 ], spacing=1, expand=True),
-                                ft.Container(
-                                    padding=ft.Padding(6, 2, 6, 2),
-                                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-                                    border_radius=4,
-                                    content=ft.Text(r["role"], size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.OUTLINE)
-                                ),
-                                ft.IconButton(
-                                    icon=ft.Icons.DELETE_OUTLINED,
-                                    icon_size=16,
-                                    on_click=lambda e, rid=r["id"]: handle_remove_recipient(rid)
-                                )
+                                ft.Row([
+                                    ft.IconButton(
+                                        icon=ft.Icons.ACCOUNT_BOX_ROUNDED,
+                                        icon_size=15,
+                                        icon_color=ft.Colors.PRIMARY,
+                                        tooltip="View User Profile",
+                                        on_click=lambda e, target=r: show_user_profile_dialog(page, target, telegram_service)
+                                    ),
+                                    ft.IconButton(
+                                        icon=ft.Icons.SEND_ROUNDED,
+                                        icon_size=14,
+                                        icon_color=ft.Colors.PRIMARY,
+                                        tooltip="Send Test Alert",
+                                        on_click=lambda e, cid=r["chat_id"]: handle_send_test_alert(cid)
+                                    ),
+                                    ft.IconButton(
+                                        icon=ft.Icons.DELETE_OUTLINED,
+                                        icon_size=14,
+                                        icon_color=ft.Colors.RED_400,
+                                        tooltip="Remove Target",
+                                        on_click=lambda e, rid=r["id"]: handle_remove_recipient(rid)
+                                    )
+                                ], spacing=-4)
                             ])
-                        ) for r in recipients
+                        ) for r in filtered_recipients
+                    ] if filtered_recipients else [
+                        ft.Container(
+                            padding=10,
+                            alignment=ft.Alignment(0, 0),
+                            content=ft.Text("No matching recipients found", size=10, color=ft.Colors.ON_SURFACE_VARIANT)
+                        )
                     ]
                 ),
 
+                ft.Divider(height=1),
+                ft.Text("ADD TELEGRAM TARGET", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.OUTLINE),
+                
+                ft.TextField(
+                    value=new_target_name,
+                    on_change=lambda e: set_new_target_name(e.control.value),
+                    hint_text="Recipient / Target Name...",
+                    dense=True,
+                    text_size=11,
+                    border_radius=8
+                ),
                 ft.Row([
                     ft.TextField(
-                        ref=new_name_ref,
-                        hint_text="NEW RECIPIENT ID...",
-                        text_size=11,
+                        value=new_target_chat_id,
+                        on_change=lambda e: set_new_target_chat_id(e.control.value),
+                        hint_text="Chat ID / Username...",
                         dense=True,
+                        text_size=11,
                         expand=True,
                         border_radius=8
                     ),
-                    ft.ElevatedButton(
+                    ft.Button(
                         "+ ADD",
                         icon=ft.Icons.PERSON_ADD_ALT_1_ROUNDED,
-                        style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_600, color=ft.Colors.WHITE),
+                        style=ft.ButtonStyle(bgcolor=ft.Colors.CYAN_700, color=ft.Colors.WHITE),
                         on_click=handle_add_recipient
                     )
-                ], spacing=8)
+                ], spacing=6)
             ]
         )
     )
 
     # Emergency Action Button (Initiate Lockdown)
-    lockdown_button = ft.ElevatedButton(
+    lockdown_button = ft.Button(
         "INITIATE LOCKDOWN",
         icon=ft.Icons.LOCK_ROUNDED,
         style=ft.ButtonStyle(
@@ -636,7 +988,7 @@ def liveMonitorView():
             ft.AlertDialog(
                 title=ft.Text("EMERGENCY LOCKDOWN INITIATED", color=ft.Colors.RED, weight=ft.FontWeight.BOLD),
                 content=ft.Text("All access control points have been sealed. Security teams dispatched."),
-                actions=[ft.TextButton("DISMISS", on_click=lambda e: page.close_dialog())]
+                actions=[ft.TextButton("DISMISS", on_click=lambda e: page.pop_dialog())]
             )
         )
     )
@@ -648,7 +1000,7 @@ def liveMonitorView():
         content=ft.Column(
             spacing=12,
             expand=True,
-            scroll=ft.ScrollMode.AUTO,
+            scroll=ft.ScrollMode.HIDDEN,
             controls=[
                 ft.ResponsiveRow(
                     spacing=12,

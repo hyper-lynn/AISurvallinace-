@@ -83,3 +83,7 @@
 8. **SQLite3 Chat History Persistence**:
    - Always persist user prompts & AI responses (including generated media paths) to `ChatService` SQLite3 storage.
    - Load history automatically using `ft.use_memo(lambda: chat_service.get_messages(user_id), [user_id])` so messages persist seamlessly across window drags, screen transitions, and application restarts.
+
+9. **Flet Page Navigation Routing**:
+   - Do **NOT** use non-existent method `page.push_route(...)`.
+   - Always use `page.go("/target_route")` for route navigation in Flet.

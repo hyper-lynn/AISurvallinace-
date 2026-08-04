@@ -154,6 +154,8 @@ def RootLayout():
             ft.Row(
                 [
                     ft.NavigationRail(
+                        # height=ft.context.page.height - 30,
+                        expand=True,
                         selected_index=selected,
                         label_type=ft.NavigationRailLabelType.ALL,
                         destinations=[

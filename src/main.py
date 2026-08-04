@@ -17,7 +17,7 @@ async def main(page:ft.Page):
         # page.vertical_alignment = ft.MainAxisAlignment.CENTER
         # page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         page.window.icon = r"images/logo.ico"
-        # page.padding = 0
+        page.padding = 0
         # page.update()
         await page.window.center()
         
@@ -30,9 +30,26 @@ async def main(page:ft.Page):
         except Exception as e:
             logger.error(f"Failed to apply custom themes: {e}")
             
+        # Initialize Telegram Service & Auto Start AI Chat Polling Listener
+        try:
+            from services.telegram_service import TelegramService
+            tg_svc = TelegramService()
+            logger.info("Telegram Service initialized and AI Listener checked.")
+        except Exception as tg_e:
+            logger.error(f"Failed to initialize Telegram Service: {tg_e}")
+
+        # Preload YOLOv8 AI Model in background thread for zero-latency camera detection
+        try:
+            from services.yolo_service import YOLOService
+            import threading
+            threading.Thread(target=YOLOService.get_instance, daemon=True).start()
+            logger.info("YOLOv8 AI Model background preloading initiated.")
+        except Exception as yolo_e:
+            logger.error(f"Failed to initiate YOLO AI model preloading: {yolo_e}")
+
         #rendering the view
         page.render(routingApp)
-        # page.window.full_screen = True
+        page.window.full_screen = True
         
     except Exception as e:
         logger.debug(f"ZayYaungPOS failed to start: {e}")

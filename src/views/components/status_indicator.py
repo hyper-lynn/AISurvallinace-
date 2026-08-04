@@ -73,10 +73,19 @@ def _check_connectivity() -> bool:
         ("google.com", 80)
     ]
     for host, port in targets:
+        s = None
         try:
-            with socket.create_connection((host, port), timeout=1.5):
+            s = socket.create_connection((host, port), timeout=1.0)
+            if s:
+                s.close()
                 return True
-        except (socket.timeout, socket.error, TimeoutError, OSError, Exception):
-            continue
+        except BaseException:
+            pass
+        finally:
+            if s:
+                try:
+                    s.close()
+                except BaseException:
+                    pass
             
     return False

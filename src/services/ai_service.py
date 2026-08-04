@@ -116,6 +116,17 @@ async def generate_ai_response(prompt: str, history: list = None, current_user =
     }
     """
     try:
+        # 0. AI Security Inspection & Prompt Injection Guardrail
+        from services.ai_security import AISecurityGuard
+        is_safe, violation_msg, sanitized_prompt = AISecurityGuard.inspect_and_sanitize(prompt)
+        if not is_safe:
+            return {
+                "text": violation_msg,
+                "media_type": None,
+                "media_url": None
+            }
+        prompt = sanitized_prompt
+
         # Check Admin Intents first
         admin_intent, args = detect_admin_intent(prompt)
         if admin_intent != "none":
@@ -249,49 +260,55 @@ async def generate_ai_response(prompt: str, history: list = None, current_user =
                 "parts": [{"text": prompt}]
             })
             
-        payload = {"contents": contents}
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": AISecurityGuard.get_system_policy()}]
+            },
+            "contents": contents
+        }
         headers = {"Content-Type": "application/json"}
         
         def _make_request():
             last_error_msg = ""
             for model in models_to_try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                try:
-                    resp = requests.post(url, json=payload, headers=headers, timeout=16)
-                    if resp.status_code == 200:
-                        result = resp.json()
-                        candidates = result.get("candidates", [])
-                        if candidates:
-                            parts = candidates[0].get("content", {}).get("parts", [])
-                            if parts:
-                                return parts[0].get("text", "ဘာမှ ပြန်လည်မရရှိပါခင်ဗျာ။")
-                    elif resp.status_code == 404:
-                        logger.error(f"Gemini API ({model}) Not Found (HTTP 404)")
-                        last_error_msg = f"Model '{model}' ကို ရှာမတွေ့ပါ (HTTP 404 Not Found)"
-                    elif resp.status_code == 403:
-                        logger.error(f"Gemini API ({model}) Forbidden (HTTP 403)")
-                        last_error_msg = "API Key မမှန်ကန်ပါ သို့မဟုတ် မဖွင့်ရသေးပါ (HTTP 403 Forbidden)"
-                    elif resp.status_code == 429:
-                        logger.error(f"Gemini API ({model}) Rate Limit (HTTP 429)")
-                        last_error_msg = f"API Traffic / Rate Limit ပြည့်သွားပါသည် (HTTP 429 - {model})"
-                        time.sleep(0.5)
-                    else:
-                        logger.error(f"Gemini API ({model}) HTTP Error {resp.status_code}")
-                        last_error_msg = f"HTTP Error {resp.status_code}"
-                except requests.exceptions.RequestException as req_err:
-                    logger.error(f"Network Connection Error ({model}): {req_err}")
-                    return (
-                        "⚠️ No Response / Connection Error!\n\n"
-                        "လက်ရှိတွင် အင်တာနက် လိုင်းကျနေပါသည် သို့မဟုတ် Network Response မရရှိပါခင်ဗျာ။\n"
-                        "💡 ကျေးဇူးပြု၍ အင်တာနက် ချိတ်ဆက်မှုအား စစ်ဆေးပြီး သို့မဟုတ် အခြား Gemini Model (ဥပမာ- Gemini 1.5 Flash / Gemini 2.0 Flash) သို့ ပြောင်းလဲ၍ ထပ်မံ ကြိုးစားပေးပါခင်ဗျာ။"
-                    )
-                except Exception as ex:
-                    logger.error(f"Gemini API ({model}) Exception: {ex}")
-                    last_error_msg = str(ex)
+                # Auto-retry up to 3 times per model for network fluctuations / timeouts
+                for attempt in range(1, 4):
+                    try:
+                        timeout_val = 12 + (attempt * 6) # 18s, 24s, 30s
+                        resp = requests.post(url, json=payload, headers=headers, timeout=timeout_val)
+                        if resp.status_code == 200:
+                            result = resp.json()
+                            candidates = result.get("candidates", [])
+                            if candidates:
+                                parts = candidates[0].get("content", {}).get("parts", [])
+                                if parts:
+                                    return parts[0].get("text", "ဘာမှ ပြန်လည်မရရှိပါခင်ဗျာ။")
+                        elif resp.status_code == 404:
+                            logger.error(f"Gemini API ({model}) Not Found (HTTP 404)")
+                            last_error_msg = f"Model '{model}' ကို ရှာမတွေ့ပါ (HTTP 404 Not Found)"
+                            break
+                        elif resp.status_code == 403:
+                            logger.error(f"Gemini API ({model}) Forbidden (HTTP 403)")
+                            last_error_msg = "API Key မမှန်ကန်ပါ သို့မဟုတ် မဖွင့်ရသေးပါ (HTTP 403 Forbidden)"
+                            break
+                        elif resp.status_code == 429:
+                            logger.error(f"Gemini API ({model}) Rate Limit (HTTP 429)")
+                            last_error_msg = f"API Traffic / Rate Limit ပြည့်သွားပါသည် (HTTP 429 - {model})"
+                            time.sleep(1.0)
+                        else:
+                            logger.error(f"Gemini API ({model}) HTTP Error {resp.status_code}")
+                            last_error_msg = f"HTTP Error {resp.status_code}"
+                    except BaseException as ex:
+                        logger.warning(f"Gemini API Connection Attempt {attempt}/3 ({model}): {ex}")
+                        last_error_msg = f"အင်တာနက် လိုင်းနှေးနေပါသည် သို့မဟုတ် Read Timeout ဖြစ်ပါသည် ({ex})"
+                        time.sleep(0.8)
 
             return (
-                f"⚠️ Gemini API Response မရရှိပါခင်ဗျာ ({last_error_msg})။\n\n"
-                f"💡 ကျေးဇူးပြု၍ `.env` ဖိုင်ထဲရှိ `GEMINI_API_KEY` (Google AI Studio Key) ကို စစ်ဆေးပါ သို့မဟုတ် Header / Settings မှ အခြား Gemini Model သို့ ပြောင်းလဲ၍ ထပ်မံ စမ်းသပ်ပေးပါခင်ဗျာ။"
+                f"⚠️ Gemini API Connection Error!\n\n"
+                f"💡 လက်ရှိတွင် အင်တာနက် လိုင်းကျနေပါသည် သို့မဟုတ် Network Timeout ဖြစ်သွားပါသည် (၃ ကြိမ် ထပ်မံကြိုးစားပြီးပါပြီ)။\n\n"
+                f"အကြောင်းရင်း: {last_error_msg}\n"
+                f"ကျေးဇူးပြု၍ အင်တာနက် ချိတ်ဆက်မှုအား စစ်ဆေးပြီး သို့မဟုတ် အခြား Gemini Model သို့ ပြောင်းလဲ၍ ထပ်မံ ကြိုးစားပေးပါခင်ဗျာ။"
             )
 
         loop = asyncio.get_event_loop()
@@ -334,7 +351,7 @@ def download_media_file(page: ft.Page, media_url: str, media_type: str):
                 else:
                     raise Exception(f"HTTP {resp.status_code}")
                 
-            page.open(
+            page.show_dialog(
                 ft.SnackBar(
                     content=ft.Text(f"✅ {media_type.capitalize()} ဖြင့် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ:\n{filepath}", font_family=AppFonts.MYANMAR),
                     bgcolor=ft.Colors.GREEN_700,
@@ -343,7 +360,7 @@ def download_media_file(page: ft.Page, media_url: str, media_type: str):
             )
         except Exception as ex:
             logger.error(f"Download Error: {ex}")
-            page.open(
+            page.show_dialog(
                 ft.SnackBar(
                     content=ft.Text(f"⚠️ No Response / သိမ်းဆည်း၍ မရပါခင်ဗျာ: {ex}", font_family=AppFonts.MYANMAR),
                     bgcolor=ft.Colors.RED_700,

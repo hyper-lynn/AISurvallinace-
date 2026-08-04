@@ -4,7 +4,25 @@ import base64
 import asyncio
 import time
 import io
+import urllib.parse
 from typing import Optional, Callable
+
+def sanitize_rtsp_url(url: str) -> str:
+    """Fix RTSP URLs where passwords contain special characters like '@' causing '@@'."""
+    if not isinstance(url, str) or not (url.startswith("rtsp://") or url.startswith("rtsps://")):
+        return url
+    try:
+        proto, rest = url.split("://", 1)
+        if "@@" in rest:
+            user_pass, host_path = rest.rsplit("@@", 1)
+            if ":" in user_pass:
+                user, pwd = user_pass.split(":", 1)
+                encoded_pwd = urllib.parse.quote(pwd + "@", safe="")
+                return f"{proto}://{user}:{encoded_pwd}@{host_path}"
+    except Exception:
+        pass
+    return url
+
 
 # Ensure src root directory is in sys.path
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,8 +39,9 @@ for pkg_path in GLOBAL_SITE_PACKAGES:
     if os.path.exists(pkg_path) and pkg_path not in sys.path:
         sys.path.append(pkg_path)
 
-# Configure OpenCV FFmpeg RTSP stream options (TCP transport & 3-second stimeout)
+# Configure OpenCV FFmpeg RTSP stream options & silence OpenCV internal C++ warnings
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|stimeout;3000000"
+os.environ["OPENCV_LOG_LEVEL"] = "OFF"
 
 try:
     from config import logger
@@ -31,10 +50,28 @@ except Exception:
     logger = logging.getLogger("CameraController")
 
 try:
+    from services.dahua_p2p_service import DahuaP2PService
+    DAHUA_P2P_SERVICE_AVAILABLE = True
+except Exception:
+    DahuaP2PService = None
+    DAHUA_P2P_SERVICE_AVAILABLE = False
+
+try:
+    from services.dahua_netsdk_service import DahuaNetSDKService
+    DAHUA_NETSDK_SERVICE_AVAILABLE = True
+except Exception:
+    DahuaNetSDKService = None
+    DAHUA_NETSDK_SERVICE_AVAILABLE = False
+
+try:
     import cv2
     import numpy as np
     from PIL import Image, ImageDraw, ImageFont
     OPENCV_AVAILABLE = True
+    try:
+        cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)
+    except Exception:
+        pass
 except Exception as ie:
     cv2 = None
     np = None
@@ -63,10 +100,22 @@ class CameraController:
         self.is_running = False
         self.is_recording = True
         self.hud_enabled = True
+        self.ai_detection_enabled = False
+        self.last_alert_time = 0
+        self.alert_cooldown_seconds = 30
+        self.ai_last_detections = []
         self._frame_callback: Optional[Callable[[str], None]] = None
+        self.on_fall_detected_callback: Optional[Callable[[str, str], None]] = None
 
     def start(self, frame_callback: Callable[[str], None]):
         """Start streaming camera frames asynchronously without blocking UI thread"""
+        self.subscribe_frames(frame_callback)
+
+    def subscribe_frames(self, frame_callback: Callable[[str], None]):
+        """Subscribe frame callback listener and start camera feed."""
+        if self.is_running and self._frame_callback == frame_callback and self.cap is not None:
+            return
+
         self._frame_callback = frame_callback
         self.is_running = True
         
@@ -80,25 +129,65 @@ class CameraController:
                     if self.source.isdigit():
                         dev_id = int(self.source)
                         backends = [cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY] if sys.platform == "win32" else [cv2.CAP_ANY]
+                        
+                        # Try requested webcam index first
                         for b in backends:
                             try:
                                 c = cv2.VideoCapture(dev_id, b)
                                 if c and c.isOpened():
-                                    ret, test_frame = c.read()
-                                    if ret and test_frame is not None:
-                                        logger.info(f"PC Webcam device index {dev_id} verified working with backend {b}.")
-                                        return c
-                                    else:
-                                        c.release()
-                            except Exception:
+                                    for _ in range(5):
+                                        ret, test_frame = c.read()
+                                        if ret and test_frame is not None:
+                                            logger.info(f"PC Webcam device index {dev_id} verified working with backend {b}.")
+                                            return c
+                                        time.sleep(0.05)
+                                    c.release()
+                            except Exception as ex:
                                 pass
-                    else:
-                        logger.info(f"Attempting to open CCTV RTSP stream URL: {self.source}")
-                        c = cv2.VideoCapture(self.source)
+
+                        # Fallback to primary webcam index 0 if requested index (e.g. index 1) is not plugged in / out of range
+                        if dev_id != 0:
+                            logger.info(f"Webcam index {dev_id} unavailable. Attempting default webcam index 0 fallback.")
+                            for b in backends:
+                                try:
+                                    c = cv2.VideoCapture(0, b)
+                                    if c and c.isOpened():
+                                        for _ in range(5):
+                                            ret, test_frame = c.read()
+                                            if ret and test_frame is not None:
+                                                logger.info(f"Fallback PC Webcam device index 0 verified working with backend {b}.")
+                                                return c
+                                            time.sleep(0.05)
+                                        c.release()
+                                except Exception:
+                                    pass
+                    elif self.source.startswith("p2p://") or self.source.upper().startswith("SN:") or "DAHUA" in self.source.upper():
+                        sn = self.source.replace("p2p://", "").replace("SN:", "").replace("sn:", "").strip()
+                        logger.info(f"Attempting Dahua General NetSDK Direct Login for SN/Device: {sn}")
+                        stream_url = self.source
+                        if DAHUA_NETSDK_SERVICE_AVAILABLE and DahuaNetSDKService:
+                            netsdk_svc = DahuaNetSDKService.get_instance()
+                            if netsdk_svc.connect():
+                                logger.info(f"Dahua NetSDK Session established for SN {sn} (Channels: {netsdk_svc.get_total_channels()})")
+                                stream_url = netsdk_svc.get_rtsp_url()
+                        clean_url = sanitize_rtsp_url(stream_url)
+                        logger.info(f"Opening video stream for Dahua device via URL: {clean_url}")
+                        c = cv2.VideoCapture(clean_url)
                         if c and c.isOpened():
                             ret, test_frame = c.read()
                             if ret and test_frame is not None:
-                                logger.info(f"CCTV Stream URL {self.source} opened successfully.")
+                                logger.info(f"Dahua CCTV Stream {clean_url} opened successfully.")
+                                return c
+                            else:
+                                c.release()
+                    else:
+                        clean_url = sanitize_rtsp_url(self.source)
+                        logger.info(f"Attempting to open CCTV RTSP stream URL: {clean_url}")
+                        c = cv2.VideoCapture(clean_url)
+                        if c and c.isOpened():
+                            ret, test_frame = c.read()
+                            if ret and test_frame is not None:
+                                logger.info(f"CCTV Stream URL {clean_url} opened successfully.")
                                 return c
                             else:
                                 c.release()
@@ -113,15 +202,25 @@ class CameraController:
 
             await self._capture_loop()
 
-        asyncio.create_task(_async_init_and_loop())
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_async_init_and_loop())
+        except RuntimeError:
+            def _run_in_thread():
+                asyncio.run(_async_init_and_loop())
+            import threading
+            threading.Thread(target=_run_in_thread, daemon=True).start()
 
     def stop(self):
         """Stop streaming camera frames"""
         self.is_running = False
-        if self.cap:
+        cap_to_release = self.cap
+        self.cap = None
+        if cap_to_release is not None:
             def release_cam():
                 try:
-                    self.cap.release()
+                    if hasattr(cap_to_release, "release"):
+                        cap_to_release.release()
                 except Exception:
                     pass
             try:
@@ -129,7 +228,6 @@ class CameraController:
                 loop.run_in_executor(CAMERA_EXECUTOR, release_cam)
             except Exception:
                 release_cam()
-            self.cap = None
         logger.info("CameraController stopped.")
 
     def switch_source(self, new_source: str):
@@ -152,27 +250,64 @@ class CameraController:
             try:
                 base64_img = None
                 
-                if self.cap and self.cap.isOpened():
+                cap_ref = self.cap
+                if cap_ref and cap_ref.isOpened():
                     def read_and_encode():
-                        if not self.cap or not self.cap.isOpened():
+                        if not cap_ref or not cap_ref.isOpened():
                             return None
-                        ret, frame = self.cap.read()
+                        ret, frame = cap_ref.read()
                         if ret and frame is not None:
+                            # 1. AI Detection Layer (Frame Skipping & Cached Box Rendering for Zero Lag)
+                            fall_detected = False
+                            human_detected = False
+                            if self.ai_detection_enabled:
+                                try:
+                                    from services.yolo_service import YOLOService
+                                    skip_inference = (frame_count % 3 != 0)
+                                    frame, fall_detected, self.ai_last_detections = YOLOService.get_instance().detect_and_draw(
+                                        frame,
+                                        skip_inference=skip_inference,
+                                        last_detections=self.ai_last_detections
+                                    )
+                                    human_detected = len(self.ai_last_detections) > 0
+                                except Exception as e:
+                                    logger.error(f"Failed to run AI detection: {e}")
+
+                            # 2. HUD Overlay Layer
                             if self.hud_enabled:
                                 frame = self._draw_tactical_overlay(frame, frame_count)
+                                
                             _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
-                            return base64.b64encode(buffer).decode('utf-8')
+                            b64_img = base64.b64encode(buffer).decode('utf-8')
+                            
+                            # 3. Alert Logic (Triggers when Human or Fall detected and callback is registered)
+                            callback = getattr(self, "on_human_detected_callback", None) or self.on_fall_detected_callback
+                            if (human_detected or fall_detected) and callback:
+                                current_time = time.time()
+                                if current_time - self.last_alert_time > self.alert_cooldown_seconds:
+                                    self.last_alert_time = current_time
+                                    event_type = "FALL DETECTED" if fall_detected else "HUMAN DETECTED"
+                                    try:
+                                        callback(self.source, b64_img, event_type)
+                                    except TypeError:
+                                        callback(self.source, b64_img)
+                                    
+                            return b64_img
                         return None
 
                     # Offload frame read & JPEG base64 encoding to thread pool
                     base64_img = await loop.run_in_executor(CAMERA_EXECUTOR, read_and_encode)
 
                     if base64_img is None and self.cap:
-                        def release_cam():
-                            try: self.cap.release()
-                            except Exception: pass
-                        await loop.run_in_executor(CAMERA_EXECUTOR, release_cam)
+                        to_rel = self.cap
                         self.cap = None
+                        def release_cam():
+                            try:
+                                if hasattr(to_rel, "release"):
+                                    to_rel.release()
+                            except Exception:
+                                pass
+                        await loop.run_in_executor(CAMERA_EXECUTOR, release_cam)
 
                 if not base64_img:
                     # Generate synthetic tactical live feed if webcam/CCTV URL fails or is unavailable
