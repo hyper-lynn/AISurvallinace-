@@ -3,9 +3,8 @@
 #ThemeContextModel , Localization & AppRouteModel are created for routing
 
 import flet as ft
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from collections.abc import Callable
-from config import logger
 
 @ft.observable
 @dataclass(frozen=True)

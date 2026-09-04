@@ -3,7 +3,9 @@ import flet as ft
 from dataclasses import dataclass, field
 from typing import Optional
 
-@ft.observable
+observable_decorator = getattr(ft, "observable", lambda cls: cls)
+
+@observable_decorator
 @dataclass
 class UserProfile:
     """Safe public user data (no password_hash)"""
@@ -20,7 +22,7 @@ class UserProfile:
     def has_role(self, role: str) -> bool:
         return self.role == role
 
-@ft.observable
+@observable_decorator
 @dataclass  
 class User:
     """Internal user model with auth credentials"""

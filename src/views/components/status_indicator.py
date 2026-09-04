@@ -64,28 +64,34 @@ def StatusIndicator():
 
 def _check_connectivity() -> bool:
     """
-    Fail-safe blocking connectivity check - runs in thread executor.
-    Uses HTTP port 80 over standard DNS IPs to avoid ISP TCP 53 port blocks and debugger timeouts.
+    Fail-safe non-raising connectivity check - runs in thread executor.
+    Uses direct numeric IP addresses (no DNS lookup) and connect_ex to prevent gaierror.
     """
-    targets = [
+    # Direct numeric IPv4 addresses avoid DNS getaddrinfo gaierror completely!
+    raw_ip_targets = [
         ("1.1.1.1", 80),
         ("8.8.8.8", 80),
-        ("google.com", 80)
+        ("1.0.0.1", 80),
+        ("8.8.4.4", 80)
     ]
-    for host, port in targets:
+    for ip_addr, port in raw_ip_targets:
         s = None
         try:
-            s = socket.create_connection((host, port), timeout=1.0)
-            if s:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.5)
+            res = s.connect_ex((ip_addr, port))
+            if res == 0:
                 s.close()
                 return True
-        except BaseException:
+        except (socket.gaierror, TimeoutError, socket.timeout, socket.error, OSError, Exception):
             pass
         finally:
             if s:
                 try:
                     s.close()
-                except BaseException:
+                except Exception:
                     pass
             
     return False
+
+

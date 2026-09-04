@@ -3,9 +3,24 @@
 import sqlite3
 import os
 import requests
+import urllib3
+import logging
+import queue
+import threading
+import time
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 from datetime import datetime
 from typing import Optional, Dict, Tuple, Union, List
 from config import logger
+
+# Suppress urllib3 connectionpool noisy retry warnings (NameResolutionError / getaddrinfo failed)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
+logging.getLogger("urllib3.util.retry").setLevel(logging.ERROR)
+try:
+    urllib3.disable_warnings()
+except Exception:
+    pass
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "assets", "storage", "auth.db")
@@ -15,6 +30,7 @@ class TelegramService:
     Singleton service for Telegram Bot configuration, SQLite3 persistence,
     Target Destination Management (Users, Channels, Groups), and automated
     per-camera AI detection alert dispatching.
+    Includes background auto-connect queue worker for seamless DNS reconnection.
     """
     _instance = None
 
@@ -31,11 +47,75 @@ class TelegramService:
         self.db_path = db_path or DEFAULT_DB_PATH
         self._ensure_db_directory()
         self._initialized = True
+        self._http_session = None
+        self._alert_queue = queue.Queue()
+        self._queue_worker_started = False
         self._create_table()
+        self._start_alert_queue_worker()
         # Auto-start Telegram Bot AI polling listener on service init if bot_token exists
         config = self.get_config()
         if config.get("bot_token"):
             self.start_ai_bot_polling()
+
+    def _get_session(self) -> requests.Session:
+        """
+        Creates a resilient HTTP Session configured with automatic retries,
+        connection pooling, and silent DNS resolution handling for Telegram API requests.
+        """
+        if self._http_session is not None:
+            return self._http_session
+
+        session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=1.5,  # 1.5s, 3s, 6s delays between retries
+            status_forcelist=[500, 502, 503, 504],
+            raise_on_status=False
+        )
+        adapter = HTTPAdapter(max_retries=retries, pool_connections=10, pool_maxsize=20)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        self._http_session = session
+        return session
+
+    def _start_alert_queue_worker(self) -> None:
+        """Start background daemon queue worker thread for persistent auto-reconnecting Telegram alert dispatches"""
+        if getattr(self, "_queue_worker_started", False):
+            return
+        self._queue_worker_started = True
+        worker_thread = threading.Thread(target=self._alert_queue_worker_loop, daemon=True)
+        worker_thread.start()
+        logger.info("Started Telegram Auto-Connect Background Queue Worker.")
+
+    def _alert_queue_worker_loop(self) -> None:
+        """Daemon worker loop: Auto-reconnects and dispatches queued photo alerts without blocking UI or timing out"""
+        while True:
+            try:
+                item = self._alert_queue.get()
+                if item is None:
+                    break
+
+                photo_source, caption, target_chat_id = item
+                sent_success = False
+                
+                # Persistent auto-connect loop until internet/DNS connects
+                while not sent_success:
+                    try:
+                        ok, msg = self._send_photo_direct(photo_source, caption, target_chat_id)
+                        if ok:
+                            sent_success = True
+                            logger.info(f"Telegram Auto-Connect Queue: Photo alert delivered to {target_chat_id} successfully.")
+                        else:
+                            time.sleep(3)
+                    except Exception:
+                        time.sleep(3)
+
+                self._alert_queue.task_done()
+            except Exception:
+                time.sleep(2)
+
+
+
 
     def _ensure_db_directory(self) -> None:
         db_dir = os.path.dirname(self.db_path)
@@ -279,15 +359,16 @@ class TelegramService:
             "parse_mode": "HTML"
         }
 
+        session = self._get_session()
         try:
-            resp = requests.post(url, json=payload, timeout=10)
+            resp = session.post(url, json=payload, timeout=(10, 30))
             res_data = resp.json()
             if resp.status_code == 200 and res_data.get("ok"):
                 return True, f"Telegram Bot Connection Success to '{cid}'!"
             else:
                 desc = res_data.get("description", "Unknown Telegram Error")
                 return False, f"Telegram Connection Error: {desc}"
-        except requests.exceptions.Timeout:
+        except (requests.exceptions.Timeout, urllib3.exceptions.ReadTimeoutError):
             logger.error(f"Telegram API timeout: Connection timed out for {cid}.")
             return False, "⚠️ Telegram Network Timeout! (အင်တာနက် လိုင်းနှေးနေပါသည်)"
         except requests.exceptions.RequestException as req_ex:
@@ -297,25 +378,23 @@ class TelegramService:
             logger.error(f"Telegram API request failed: {e}")
             return False, f"Network/API Error: {str(e)}"
 
-    def send_alert_photo(
+    def _send_photo_direct(
         self,
         photo_source: Union[str, bytes],
         caption: str,
-        target_chat_id: Optional[str] = None
+        target_chat_id: str
     ) -> Tuple[bool, str]:
-        """
-        Send detection snapshot alert photo to Telegram Chat or Channel.
-        Supports both file path (str) and raw JPEG bytes.
-        """
+        """Direct network POST request helper for sending photo alert"""
         config = self.get_config()
-        token = config["bot_token"]
-        cid = (target_chat_id or config["chat_id"]).strip()
+        token = config.get("bot_token", "").strip()
+        cid = target_chat_id.strip()
 
         if not token or not cid:
             return False, "Telegram Bot Token သို့မဟုတ် Target Chat ID မသတ်မှတ်ရသေးပါ။"
 
         url = f"https://api.telegram.org/bot{token}/sendPhoto"
         data = {"chat_id": cid, "caption": caption, "parse_mode": "HTML"}
+        session = self._get_session()
 
         try:
             if isinstance(photo_source, str):
@@ -323,10 +402,10 @@ class TelegramService:
                     return False, f"Snapshot photo file မတွေ့ရှိပါ: {photo_source}"
                 with open(photo_source, "rb") as photo_file:
                     files = {"photo": ("snapshot.jpg", photo_file, "image/jpeg")}
-                    resp = requests.post(url, data=data, files=files, timeout=15)
+                    resp = session.post(url, data=data, files=files, timeout=(10, 30))
             elif isinstance(photo_source, bytes):
                 files = {"photo": ("snapshot.jpg", photo_source, "image/jpeg")}
-                resp = requests.post(url, data=data, files=files, timeout=15)
+                resp = session.post(url, data=data, files=files, timeout=(10, 30))
             else:
                 return False, "Unsupported photo source format."
 
@@ -335,21 +414,39 @@ class TelegramService:
                 return True, "Alert photo sent to Telegram successfully!"
             else:
                 desc = res_data.get("description", "Failed to send photo.")
-                if "chat not found" in desc.lower():
-                    logger.error(f"Telegram sendPhoto failed ({cid}): Chat ID မတွေ့ရှိပါ။ Telegram Bot ထဲသို့ /start နှိပ်ပြီး ဝင်ရောက်ထားခြင်း ရှိမရှိ သို့မဟုတ် Settings တွင် Chat ID (Numeric Chat ID သို့မဟုတ် Public Channel Username) မှန်မမှန် စစ်ဆေးပါ။")
-                else:
-                    logger.error(f"Telegram sendPhoto failed: {desc}")
                 return False, f"Telegram API Error: {desc}"
-
-        except requests.exceptions.Timeout:
-            logger.error(f"Telegram sendPhoto timeout ({cid}): Connection timed out.")
-            return False, "⚠️ Telegram Network Timeout! (အင်တာနက် လိုင်းနှေးနေပါသည်)"
-        except requests.exceptions.RequestException as req_ex:
-            logger.error(f"Telegram sendPhoto failed: {req_ex}")
-            return False, f"⚠️ Network Error: {str(req_ex)}"
         except Exception as e:
-            logger.error(f"Send alert photo error: {e}")
-            return False, f"Alert Send Exception: {str(e)}"
+            return False, str(e)
+
+    def send_alert_photo(
+        self,
+        photo_source: Union[str, bytes],
+        caption: str,
+        target_chat_id: Optional[str] = None
+    ) -> Tuple[bool, str]:
+        """
+        Send detection snapshot alert photo to Telegram Chat or Channel.
+        Automatically handles DNS NameResolutionError & network drops with background auto-reconnect.
+        """
+        config = self.get_config()
+        cid = (target_chat_id or config.get("chat_id", "")).strip()
+        if not cid:
+            return False, "Telegram Target Chat ID မသတ်မှတ်ရသေးပါ။"
+
+        # Attempt direct network send first
+        ok, msg = self._send_photo_direct(photo_source, caption, cid)
+        if ok:
+            return True, msg
+
+        # If network/DNS resolution is offline, queue in background worker for persistent auto-reconnect
+        err_lower = msg.lower()
+        if any(term in err_lower for term in ["getaddrinfo", "nameresolution", "connection", "timeout", "failed", "resolve"]):
+            self._alert_queue.put((photo_source, caption, cid))
+            return True, "⚡ Alert queued in background worker: Auto-reconnecting Telegram..."
+
+        return False, msg
+
+
 
     def send_camera_alert(
         self,
@@ -357,11 +454,13 @@ class TelegramService:
         photo_source: Union[str, bytes],
         detection_type: str = "HUMAN",
         confidence: float = 0.90,
-        model_used: Optional[str] = None
+        model_used: Optional[str] = None,
+        person_name: Optional[str] = None
     ) -> Tuple[bool, str]:
         """
         Automated alert dispatcher: Checks camera profile settings (Motion ON/OFF,
         Human ON/OFF, Telegram Enable/Disable, Custom Chat ID) and dispatches alert to Telegram.
+        Supports Target Face Identity inclusion.
         """
         config = self.get_config()
         token = config["bot_token"]
@@ -379,7 +478,7 @@ class TelegramService:
         event_lower = detection_type.lower()
         if "motion" in event_lower and not bool(camera.get("motion_detection", 0)):
             return False, "Motion detection is OFF for this camera profile."
-        if "human" in event_lower and not bool(camera.get("human_detection", 0)):
+        if "human" in event_lower and not bool(camera.get("human_detection", 0)) and not person_name:
             return False, "Human detection is OFF for this camera profile."
 
         # Collect target Chat/Channel/Group IDs
@@ -413,11 +512,14 @@ class TelegramService:
         success_count = 0
         last_msg = ""
         
+        person_info = f"👤 <b>Target Identity:</b> <code>{person_name.upper()}</code>\n" if person_name else ""
+
         for tid in target_chat_ids:
             caption = (
                 f"🚨 <b>S-Eye AI Security Alert</b>\n\n"
                 f"📹 <b>Camera Channel:</b> {cam_name} ({cam_type})\n"
-                f"🎯 <b>Detection Event:</b> {detection_type.upper()} DETECTED\n"
+                f"🎯 <b>Detection Event:</b> {detection_type.upper()}\n"
+                f"{person_info}"
                 f"🧠 <b>AI Scan Engine:</b> {engine}\n"
                 f"📊 <b>Confidence Score:</b> {confidence * 100:.1f}%\n"
                 f"📢 <b>Target Destination:</b> <code>{tid}</code>\n"
@@ -432,6 +534,7 @@ class TelegramService:
         if success_count > 0:
             return True, f"Alert photo sent to {success_count} Telegram destination(s) successfully!"
         return False, last_msg
+
 
     def start_ai_bot_polling(self) -> None:
         """Start background polling thread to listen for Telegram user messages & respond via Gemini AI Pro"""
@@ -457,6 +560,7 @@ class TelegramService:
         last_update_id = 0
         logger.info("Telegram Bot AI Chat polling loop started.")
         
+        session = self._get_session()
         while getattr(self, "_polling_active", False):
             try:
                 config = self.get_config()
@@ -467,7 +571,7 @@ class TelegramService:
 
                 url = f"https://api.telegram.org/bot{token}/getUpdates"
                 params = {"offset": last_update_id + 1, "timeout": 6}
-                resp = requests.get(url, params=params, timeout=10)
+                resp = session.get(url, params=params, timeout=(10, 20))
                 
                 if resp.status_code == 200:
                     data = resp.json()
@@ -524,19 +628,25 @@ class TelegramService:
 
                             # Send reply back to Telegram User with fail-safe fallback
                             send_url = f"https://api.telegram.org/bot{token}/sendMessage"
-                            resp_send = requests.post(send_url, json={
+                            resp_send = session.post(send_url, json={
                                 "chat_id": chat_id,
                                 "text": reply_text,
                                 "parse_mode": "HTML"
-                            }, timeout=8)
+                            }, timeout=(10, 20))
                             if resp_send.status_code != 200:
                                 # Fallback to plain text if HTML parsing failed
-                                requests.post(send_url, json={
+                                session.post(send_url, json={
                                     "chat_id": chat_id,
                                     "text": reply_text
-                                }, timeout=8)
+                                }, timeout=(10, 20))
             except Exception as e:
-                logger.error(f"Telegram Polling Exception: {e}")
-                time.sleep(4)
+                err_str = str(e).lower()
+                if any(term in err_str for term in ["getaddrinfo", "nameresolution", "resolve", "connection"]):
+                    time.sleep(5)
+                else:
+                    logger.warning(f"Telegram Polling Auto-Reconnect Loop: {e}")
+                    time.sleep(4)
+
+
 
             time.sleep(1)

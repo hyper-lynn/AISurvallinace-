@@ -1,0 +1,457 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}</UniqueIdentifier>
+      <Extensions>qrc;*</Extensions>
+      <ParseFiles>false</ParseFiles>
+    </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}</UniqueIdentifier>
+      <Extensions>qrc;*</Extensions>
+      <ParseFiles>false</ParseFiles>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>moc;h;cpp</Extensions>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="Source Files\Ctrl">
+      <UniqueIdentifier>{aa6e059b-f450-4483-bafb-fad1c1390bae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Model">
+      <UniqueIdentifier>{fb0f2230-71b7-4311-a8b0-1d3d57a354fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OpenApi">
+      <UniqueIdentifier>{437e965b-2bc4-4451-bc45-86983a8f0736}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OpenApi\Include">
+      <UniqueIdentifier>{9840cf8f-2774-48cc-967f-056032f11ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OpenApi\Src">
+      <UniqueIdentifier>{e4058ad9-3967-4d48-8915-5cd94c51fbd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{73a2656a-8cbe-4e71-936e-91a30356d1e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils\CommonView">
+      <UniqueIdentifier>{7f7e545d-cef6-477a-9693-9cc03cd421ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils\CommonView\Titlebar">
+      <UniqueIdentifier>{a907c3f1-64f1-414c-a79c-b7273e1ce5d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View">
+      <UniqueIdentifier>{11931ed5-92d9-4b43-ba48-0f899d66c18c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View\DeviceList">
+      <UniqueIdentifier>{adefd3ff-b6c8-43fd-99b1-56ef1a1f991a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View\DeviceManage">
+      <UniqueIdentifier>{d3ff4f7d-274f-4c21-9586-1094212b9afa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View\Login">
+      <UniqueIdentifier>{d421b7e6-a0ff-4fb7-bbe0-9ab2babafe90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View\RecordList">
+      <UniqueIdentifier>{47708a07-545f-45fa-96a8-245aaa140b64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View\VideoPlay">
+      <UniqueIdentifier>{18dfff3b-ba98-4173-804d-fe97b3c3e679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\View\Login\UserLogin">
+      <UniqueIdentifier>{ea1c4498-d8dd-4c69-8f9e-abad6afc2653}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Network">
+      <UniqueIdentifier>{1c570568-30b2-420c-9d02-5e2e1d2eb1db}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="LCDemo.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Src\Ctrl\DevicesListCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\OpenApiCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\PlayCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\RealPlayCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\RecordListCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\RecordPlayCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\ThreadCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Ctrl\TokenCtrl.cpp">
+      <Filter>Source Files\Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\cJSON\cJSON.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_ClientSdk.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_Common.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_ConstString.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_FreeBuffer.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_Reflection.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_ReflectionObject.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\algorithm\LCOpenApi_base64.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\algorithm\LCOpenApi_md5.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\algorithm\LCOpenApi_sha1.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\api\AccessToken.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\api\UserBind.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\api\UserBindSms.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\OpenApi\Src\api\UserToken.cpp">
+      <Filter>Source Files\OpenApi\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\TitleBar\PageTitle.cpp">
+      <Filter>Source Files\Utils\CommonView\Titlebar</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\BaseScrollView.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\BaseWidget.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\BgColorBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\Calendar.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\CheckBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\DisableBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\IconBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\IconOverlapTextBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\IconTextBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\MyEditBox.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\MyEditBox2.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\MyMessageBox.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\ProgressSlider.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\RoundRectTextBtn.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\ScrollView.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\SearchBar.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CommonView\SplitLine.cpp">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\CurlDownload.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Utils\TimeHelper.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\DeviceList\DevicesListView.cpp">
+      <Filter>Source Files\View\DeviceList</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\DeviceList\DeviceView.cpp">
+      <Filter>Source Files\View\DeviceList</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\DeviceManage\DeviceAddView.cpp">
+      <Filter>Source Files\View\DeviceManage</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\DeviceManage\DeviceSetView.cpp">
+      <Filter>Source Files\View\DeviceManage</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\Login\UserLogin\UserBindView.cpp">
+      <Filter>Source Files\View\Login\UserLogin</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\Login\UserLogin\UserLoginView.cpp">
+      <Filter>Source Files\View\Login\UserLogin</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\Login\LoginSelectView.cpp">
+      <Filter>Source Files\View\Login</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\RecordList\RecordListView.cpp">
+      <Filter>Source Files\View\RecordList</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\RecordList\RecordThumbView.cpp">
+      <Filter>Source Files\View\RecordList</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\VideoPlay\PtzControlView.cpp">
+      <Filter>Source Files\View\VideoPlay</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\VideoPlay\RealPlayView.cpp">
+      <Filter>Source Files\View\VideoPlay</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\VideoPlay\RecordPlayView.cpp">
+      <Filter>Source Files\View\VideoPlay</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\View\MainForm.cpp">
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Network\Network.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Network\NetworkPrivate.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Network\NetworkTimeout.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\DevicesListCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\OpenApiCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\PlayCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\RealPlayCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\RecordListCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\RecordPlayCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\ThreadCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Ctrl\TokenCtrl.h">
+      <Filter>Source Files\Ctrl</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Model\PtzControlInfo.h">
+      <Filter>Source Files\Model</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\TitleBar\PageTitle.h">
+      <Filter>Source Files\Utils\CommonView\Titlebar</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\BaseScrollView.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\BaseWidget.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\BgColorBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\Calendar.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\CheckBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\DisableBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\IconBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\IconOverlapTextBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\IconTextBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\MyEditBox.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\MyEditBox2.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\MyMessageBox.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\ProgressSlider.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\RoundRectTextBtn.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\ScrollView.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\SearchBar.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CommonView\SplitLine.h">
+      <Filter>Source Files\Utils\CommonView</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Utils\CurlDownload.h">
+      <Filter>Source Files\Utils</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\DeviceList\DevicesListView.h">
+      <Filter>Source Files\View\DeviceList</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\DeviceList\DeviceView.h">
+      <Filter>Source Files\View\DeviceList</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\DeviceManage\DeviceAddView.h">
+      <Filter>Source Files\View\DeviceManage</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\DeviceManage\DeviceSetView.h">
+      <Filter>Source Files\View\DeviceManage</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\Login\UserLogin\UserBindView.h">
+      <Filter>Source Files\View\Login\UserLogin</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\Login\UserLogin\UserLoginView.h">
+      <Filter>Source Files\View\Login\UserLogin</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\Login\LoginSelectView.h">
+      <Filter>Source Files\View\Login</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\RecordList\RecordListView.h">
+      <Filter>Source Files\View\RecordList</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\RecordList\RecordThumbView.h">
+      <Filter>Source Files\View\RecordList</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\VideoPlay\PtzControlView.h">
+      <Filter>Source Files\View\VideoPlay</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\VideoPlay\RealPlayView.h">
+      <Filter>Source Files\View\VideoPlay</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\VideoPlay\RecordPlayView.h">
+      <Filter>Source Files\View\VideoPlay</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\View\MainForm.h">
+      <Filter>Source Files\View</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Network\Network.h">
+      <Filter>Source Files\Network</Filter>
+    </QtMoc>
+    <QtMoc Include="Src\Network\NetworkTimeout.h">
+      <Filter>Source Files\Network</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\Model\ChannelsListInfo.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Model\OpenApiInfo.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Model\ProtoType.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Model\RecordInfo.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Model\ThreadInfo.h">
+      <Filter>Source Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_ClientSdk.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_Common.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_ConstString.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_FreeBuffer.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_Reflection.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_ReflectionObject.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\api\AccessToken.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\api\UserBind.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\api\UserBindSms.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Include\api\UserToken.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Src\cJSON\cJSON.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\OpenApi\Src\algorithm\LCOpenApi_algorithm.h">
+      <Filter>Source Files\OpenApi\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\global.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Utils\TimeHelper.h">
+      <Filter>Source Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Network\NetworkPrivate.h">
+      <Filter>Source Files\Network</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

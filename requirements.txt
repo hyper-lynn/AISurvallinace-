@@ -1,0 +1,11 @@
+faiss-cpu>=1.7.4
+flet-camera>=0.86.1
+flet[all]>=0.85.3
+numpy>=1.26.0
+ollama>=0.6.2
+onnxruntime-gpu>=1.19.0,<1.20.0
+opencv-python>=4.8.0
+pillow>=10.0.0
+python-multipart>=0.0.32
+torch
+ultralytics

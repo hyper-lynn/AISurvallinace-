@@ -1,0 +1,70 @@
+# Copyright(c) 2011, ZheJiang Dahua, All rights reserved.
+# zhou_jiangang@dahuatech.com
+#
+# Makefile for libdsl
+
+# <1> project special define
+
+# target, one of LIB_TARGET / DLL_TARGET / EXE_TARGET
+DLL_TARGET = libdsl$(FN_D).so
+LIB_TARGET = libdsl_static$(FN_D).a
+
+LINT_PLATFORM = X86_32 X86_64
+
+# source file
+SRCS += \
+	$(wildcard *.cpp) \
+	$(wildcard DNetEngineBackend/*.cpp) \
+	$(wildcard ESB/*.cpp) \
+
+# json source file
+SRCS += \
+	$(wildcard jsondsl/lib_json/*.cpp) \
+
+# pugixml source file
+SRCS += \
+	$(wildcard pugixmldsl/*.cpp) \
+
+# compile flag
+CFLAGS += -g -pipe -Wall
+INCS += \
+	-I./ -I../ \
+	-I./pugixmldsl \
+
+CFLAGS += $(INCS)
+
+#lint source file
+LINT_SRCS += \
+	$(wildcard *.cpp) \
+	$(wildcard DNetEngineBackend/*.cpp) \
+	
+# link flag
+LDFLAGS +=
+
+# force check svn_version.h before make deduce the recipes
+FORCE_CHECK_SVN_VERSION_H:=$(shell python ../Depend/dslct.py gen_svninfo_header)
+
+# include template
+TOP_DIR?=..
+include $(TOP_DIR)/Makefile.template
+
+
+ifeq ($(MAC),1)
+LDFLAGS += -liconv
+else ifeq ($(MAC_xcode_64),1)
+LDFLAGS += -liconv
+else ifeq ($(MAC_ARMV7),1)
+LDFLAGS += -liconv
+else ifeq ($(MAC_ARM64),1)
+LDFLAGS += -liconv
+else ifeq ($(ANDROID),1)
+LDFLAGS += -lgnustl_shared
+else ifeq ($(ANDROID_64),1)
+LDFLAGS += -lgnustl_shared
+else ifeq ($(AARCH64),1)
+LDFLAGS += -lpthread -lrt -ldl
+else
+# common linux
+LDFLAGS += -lpthread -lrt -luuid -ldl
+endif
+

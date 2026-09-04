@@ -38,11 +38,11 @@ def rootLayout():
             idx = int(e.control.selected_index) if (hasattr(e.control, "selected_index") and e.control.selected_index is not None) else int(e.data)
             route = NAV_ROUTES[idx]
             logger.info(f"Navigating to: {route}")
-            page.go(route)
+            page.run_task(page.push_route, route)
         except Exception as ex:
             logger.warning(f"Navigation error: {ex}")
             try:
-                page.go("/dashboard")
+                page.run_task(page.push_route, "/dashboard")
             except Exception:
                 pass
     
@@ -185,15 +185,15 @@ def rootLayout():
             ft.Row([
                 ft.Container(
                     content=ft.Text("SYSTEM CENTER", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700 if selected == 0 else ft.Colors.ON_SURFACE_VARIANT),
-                    on_click=lambda _: page.go("/dashboard")
+                    on_click=lambda _: page.run_task(page.push_route, "/dashboard")
                 ),
                 ft.Container(
                     content=ft.Text("DATA FEED", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700 if selected == 1 else ft.Colors.ON_SURFACE_VARIANT),
-                    on_click=lambda _: page.go("/live-monitor")
+                    on_click=lambda _: page.run_task(page.push_route, "/live-monitor")
                 ),
                 ft.Container(
                     content=ft.Text("NETWORK MAP", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700 if selected == 2 else ft.Colors.ON_SURFACE_VARIANT),
-                    on_click=lambda _: page.go("/about")
+                    on_click=lambda _: page.run_task(page.push_route, "/about")
                 ),
             ], spacing=18)
         ], spacing=24, alignment=ft.MainAxisAlignment.START),

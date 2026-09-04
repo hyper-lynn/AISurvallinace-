@@ -8,7 +8,9 @@ from services.camera_service import CameraService
 from services.telegram_service import TelegramService
 from views.components.model_selector import ModelSelector
 from views.components.userProfileDialog import show_user_profile_dialog, show_edit_target_dialog
+from views.components.target_face_manager import TargetFaceManager
 from config.fonts import AppFonts
+
 
 
 @ft.component
@@ -46,6 +48,9 @@ def EditCameraModal(cam_item: dict, on_close: Callable[[], None], on_saved: Call
     def handle_save_camera_edit(e):
         name = edit_name.strip()
         source = edit_source.strip()
+        if source and not (source.startswith("rtsp://") or source.startswith("rtsps://") or source == "0" or source.startswith("p2p://") or source.upper().startswith("SN:")):
+            if edit_type == "p2p_dahua" or len(source) >= 6:
+                source = f"SN:{source}"
         if name and source:
             camera_service.update_camera(
                 camera_id=cam_item["id"],
@@ -347,6 +352,9 @@ def settingsView():
         name = cam_name.strip()
         source = cam_source.strip()
         grp = cam_group.strip() or "Zone-01"
+        if source and not (source.startswith("rtsp://") or source.startswith("rtsps://") or source == "0" or source.startswith("p2p://") or source.upper().startswith("SN:")):
+            if cam_type == "p2p_dahua" or len(source) >= 6:
+                source = f"SN:{source}"
         if name and source:
             camera_service.add_camera(
                 name=name,
@@ -359,12 +367,320 @@ def settingsView():
             set_cam_source("")
             show_feedback("Camera Deployed", f"Camera '{name}' deployed to registry successfully under '{grp}'!", is_success=True)
         else:
-            show_feedback("Input Error", "Please fill in Camera Name and Source Link!", is_success=False)
+            show_feedback("Input Error", "Please fill in Camera Name and Source Link / Serial Number!", is_success=False)
 
-    def handle_delete_camera(cid: int):
-        camera_service.delete_camera(cid)
-        set_refresh_key(refresh_key + 1)
-        show_feedback("Camera Deleted", "Camera setup deleted from registry successfully.", is_success=True)
+    def handle_open_quick_sn_dialog(e):
+        known_sn_items = []
+        for c in cameras:
+            src = str(c.get("source", "")).strip()
+            if "SN:" in src or src.startswith("p2p://") or len(src) >= 8 and not src.startswith("http") and not src.startswith("rtsp"):
+                sn_clean = src.replace("p2p://", "").replace("SN:", "").replace("sn:", "").strip()
+                known_sn_items.append({"sn": sn_clean, "name": c.get("name"), "group": c.get("camera_group", "Zone-01")})
+
+        sn_name_input = ft.TextField(label="CAMERA NAME", hint_text="e.g. Wired Channel 1 / IMOU Gate", dense=True, text_size=12)
+        sn_val_input = ft.TextField(label="SERIAL NUMBER (SN)", hint_text="e.g. 66350BDPSF37F69 or 07474BCPSFDB9D7", dense=True, text_size=12)
+        sn_group_input = ft.TextField(label="ZONE / GROUP TAG", value="Wired Channel", hint_text="e.g. IMOU Wireless or Wired Channel", dense=True, text_size=12)
+
+        def handle_select_known_sn(evt):
+            val = evt.control.value
+            if val:
+                for k in known_sn_items:
+                    if k["sn"] == val:
+                        sn_val_input.value = k["sn"]
+                        sn_name_input.value = k["name"]
+                        sn_group_input.value = k["group"]
+                        break
+                page.update()
+
+        sn_picker_dropdown = ft.Dropdown(
+            label="🔑 SELECT STORED SERIAL NUMBER (SN)",
+            hint_text="Select a known Serial Number from Database...",
+            dense=True,
+            text_size=11,
+            options=[
+                ft.dropdown.Option(item["sn"], f"{item['sn']} ({item['name']} - {item['group']})") for item in known_sn_items
+            ],
+            on_select=handle_select_known_sn
+        ) if known_sn_items else ft.Container()
+
+        def save_quick_sn(evt):
+            name = sn_name_input.value.strip()
+            sn = sn_val_input.value.strip()
+            grp = sn_group_input.value.strip() or "Zone-01"
+            if name and sn:
+                sn_source = f"SN:{sn}" if not sn.startswith("SN:") and not sn.startswith("p2p://") else sn
+                camera_service.add_camera(
+                    name=name,
+                    device_type="p2p_dahua",
+                    source=sn_source,
+                    camera_group=grp
+                )
+                set_refresh_key(refresh_key + 1)
+                page.pop_dialog()
+                show_feedback("SN Camera Added", f"Camera '{name}' with SN '{sn}' added under '{grp}' successfully!", is_success=True)
+            else:
+                show_feedback("Input Error", "Please fill in both Camera Name and Serial Number!", is_success=False)
+
+        dialog = ft.AlertDialog(
+            open=True,
+            title=ft.Row([
+                ft.Icon(ft.Icons.QR_CODE_ROUNDED, color=ft.Colors.BLUE_400),
+                ft.Text("Quick Select / Add Camera by Serial Number (SN)", weight=ft.FontWeight.BOLD, size=15)
+            ], spacing=8),
+            content=ft.Container(
+                width=480,
+                padding=10,
+                content=ft.Column(
+                    tight=True,
+                    spacing=12,
+                    controls=[
+                        ft.Text("Select a known Serial Number from DB or type a new custom SN:", size=11, color=ft.Colors.ON_SURFACE_VARIANT, font_family=AppFonts.MYANMAR),
+                        sn_picker_dropdown,
+                        ft.Divider(height=1),
+                        sn_name_input,
+                        sn_val_input,
+                        sn_group_input,
+                    ]
+                )
+            ),
+            actions=[
+                ft.Button("Cancel", on_click=lambda _: page.pop_dialog()),
+                ft.Button("Save SN Camera", style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE), on_click=save_quick_sn)
+            ]
+        )
+    def handle_open_wired_import_dialog(e):
+        nvr_ip_input = ft.TextField(label="NVR / CAMERA IP ADDRESS", value="192.168.100.97", hint_text="e.g. 192.168.100.97", dense=True, text_size=12)
+        nvr_user_input = ft.TextField(label="USERNAME", value="admin", dense=True, text_size=12)
+        nvr_pass_input = ft.TextField(label="PASSWORD", value="12345asd@", password=True, can_reveal_password=True, dense=True, text_size=12)
+        nvr_chans_input = ft.TextField(label="TOTAL CHANNELS COUNT", value="16", hint_text="e.g. 16, 8, or 4", dense=True, text_size=12)
+
+        def do_import_wired(evt):
+            target_ip = nvr_ip_input.value.strip() or "192.168.100.97"
+            target_user = nvr_user_input.value.strip() or "admin"
+            target_pass = nvr_pass_input.value.strip() or "12345asd@"
+            try:
+                ch_count = int(nvr_chans_input.value.strip())
+            except Exception:
+                ch_count = 16
+
+            imported_cnt = camera_service.import_all_dahua_channels(
+                ip=target_ip,
+                user=target_user,
+                password=target_pass,
+                channel_count=ch_count,
+                overwrite=True
+            )
+            set_refresh_key(refresh_key + 1)
+            page.pop_dialog()
+            show_feedback("Wired CCTV Imported", f"Successfully imported/updated {imported_cnt} Dahua Wired CCTV channels for IP {target_ip}!", is_success=True)
+
+        dialog = ft.AlertDialog(
+            open=True,
+            title=ft.Row([
+                ft.Icon(ft.Icons.AUTO_AWESOME_ROUNDED, color=ft.Colors.CYAN_400),
+                ft.Text("Bulk Import Wired NVR / CCTV Channels", weight=ft.FontWeight.BOLD, size=15)
+            ], spacing=8),
+            content=ft.Container(
+                width=450,
+                padding=10,
+                content=ft.Column(
+                    tight=True,
+                    spacing=12,
+                    controls=[
+                        ft.Text("Enter your Dahua/Wired NVR IP details to auto-generate and import all RTSP channels:", size=11, color=ft.Colors.ON_SURFACE_VARIANT, font_family=AppFonts.MYANMAR),
+                        nvr_ip_input,
+                        ft.Row([
+                            ft.Container(col={"xs": 6}, content=nvr_user_input, expand=True),
+                            ft.Container(col={"xs": 6}, content=nvr_pass_input, expand=True),
+                        ], spacing=8),
+                        nvr_chans_input,
+                    ]
+                )
+            ),
+            actions=[
+                ft.Button("Cancel", on_click=lambda _: page.pop_dialog()),
+                ft.Button("Import All Channels", style=ft.ButtonStyle(bgcolor=ft.Colors.CYAN_900, color=ft.Colors.CYAN_100), on_click=do_import_wired)
+            ]
+        )
+        page.show_dialog(dialog)
+
+    def handle_confirm_delete_camera(cam_item: dict):
+        cid = cam_item["id"]
+        cname = cam_item["name"]
+        dialog = ft.AlertDialog(
+            open=True,
+            title=ft.Row([
+                ft.Icon(ft.Icons.DELETE_FOREVER_ROUNDED, color=ft.Colors.RED_400),
+                ft.Text("Confirm Delete Camera", weight=ft.FontWeight.BOLD, size=15)
+            ], spacing=8),
+            content=ft.Text(f"Are you sure you want to delete camera '{cname}' from database registry?", font_family=AppFonts.MYANMAR, size=12),
+            actions=[
+                ft.Button("Cancel", on_click=lambda _: page.pop_dialog()),
+                ft.Button("Delete Camera", style=ft.ButtonStyle(bgcolor=ft.Colors.RED_900, color=ft.Colors.WHITE), on_click=lambda _: (
+                    camera_service.delete_camera(cid),
+                    set_refresh_key(refresh_key + 1),
+                    page.pop_dialog(),
+                    show_feedback("Camera Deleted", f"Camera '{cname}' deleted from database successfully.", is_success=True)
+                ))
+            ]
+        )
+        page.show_dialog(dialog)
+
+    def handle_purge_all_cameras(e):
+        dialog = ft.AlertDialog(
+            open=True,
+            title=ft.Row([
+                ft.Icon(ft.Icons.WARNING_ROUNDED, color=ft.Colors.AMBER_400),
+                ft.Text("Reset & Clear All Cameras Registry", weight=ft.FontWeight.BOLD, size=15)
+            ], spacing=8),
+            content=ft.Text("⚠️ Warning: This action will purge and delete ALL cameras and P2P entries from the database so you can start fresh. Continue?", font_family=AppFonts.MYANMAR, size=12),
+            actions=[
+                ft.Button("Cancel", on_click=lambda _: page.pop_dialog()),
+                ft.Button("Purge All Cameras", style=ft.ButtonStyle(bgcolor=ft.Colors.RED_900, color=ft.Colors.WHITE), on_click=lambda _: (
+                    camera_service.delete_all_cameras(),
+                    set_refresh_key(refresh_key + 1),
+                    page.pop_dialog(),
+                    show_feedback("Registry Cleared", "All camera devices purged from database successfully.", is_success=True)
+                ))
+            ]
+        )
+        page.show_dialog(dialog)
+
+    def handle_open_step_by_step_wizard(e):
+        current_step = [1]  # Mutable step tracker
+        
+        wizard_type = ["rtsp_wired"]  # Default setup type
+        name_in = ft.TextField(label="1. CAMERA / STREAM NAME", value="Dahua NVR Channel 01", dense=True, text_size=12)
+        ip_in = ft.TextField(label="2. IP ADDRESS / HOST", value="192.168.100.97", dense=True, text_size=12)
+        user_in = ft.TextField(label="3. USERNAME", value="admin", dense=True, text_size=12)
+        pass_in = ft.TextField(label="4. PASSWORD / SAFETY CODE", value="12345asd@", password=True, can_reveal_password=True, dense=True, text_size=12)
+        chan_in = ft.TextField(label="5. CHANNEL NUMBER", value="1", hint_text="1 to 16", dense=True, text_size=12)
+        group_in = ft.TextField(label="6. ZONE / GROUP TAG", value="Zone-01", dense=True, text_size=12)
+
+        status_text = ft.Text("Click 'Test Stream Connection' to verify live feed...", size=11, color=ft.Colors.CYAN_200)
+        status_container = ft.Container(
+            padding=10,
+            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+            border_radius=8,
+            content=status_text
+        )
+
+        def build_current_source_str():
+            t = wizard_type[0]
+            if t == "webcam":
+                return "0"
+            elif t == "p2p_dahua":
+                sn = chan_in.value.strip() or "8M0435CPAZ0E327"
+                return f"SN:{sn}"
+            else:
+                ip = ip_in.value.strip() or "192.168.100.97"
+                usr = user_in.value.strip() or "admin"
+                pwd = pass_in.value.strip() or "12345asd@"
+                ch = chan_in.value.strip() or "1"
+                import urllib.parse
+                enc_p = urllib.parse.quote(pwd, safe="")
+                return f"rtsp://{usr}:{enc_p}@{ip}:554/cam/realmonitor?channel={ch}&subtype=0"
+
+        def test_connection_action(evt):
+            status_text.value = "⏳ Testing RTSP Stream Connection... Please wait..."
+            status_text.color = ft.Colors.PRIMARY
+            page.update()
+            
+            src = build_current_source_str()
+            def _test():
+                from controllers.camera_controller import CameraController
+                cam_ctl = CameraController(source=src)
+                cap = cam_ctl.open_cam_blocking()
+                if cap and cap.isOpened():
+                    ret, frame = cap.read()
+                    cap.release()
+                    if ret and frame is not None:
+                        status_text.value = f"✅ SUCCESS: Connected to Stream! ({frame.shape[1]}x{frame.shape[0]} px)"
+                        status_text.color = ft.Colors.GREEN_400
+                    else:
+                        status_text.value = "⚠️ WARNING: Opened stream but failed to read frame."
+                        status_text.color = ft.Colors.AMBER_400
+                else:
+                    status_text.value = "❌ FAILED: Could not connect to camera stream. Check IP/Password."
+                    status_text.color = ft.Colors.RED_400
+                page.update()
+            page.run_thread(_test)
+
+        def save_wizard_camera(evt):
+            cname = name_in.value.strip() or "New CCTV Stream"
+            ctype = wizard_type[0]
+            csource = build_current_source_str()
+            cgroup = group_in.value.strip() or "Zone-01"
+
+            camera_service.add_camera(
+                name=cname,
+                device_type=ctype,
+                source=csource,
+                camera_group=cgroup
+            )
+            set_refresh_key(refresh_key + 1)
+            page.pop_dialog()
+            show_feedback("Camera Saved", f"Camera '{cname}' configured and deployed successfully!", is_success=True)
+
+        def handle_select_type(selected_type: str, default_name: str, is_sn: bool):
+            wizard_type[0] = selected_type
+            name_in.value = default_name
+            chan_in.label = "5. SERIAL NUMBER (SN)" if is_sn else "5. CHANNEL NUMBER"
+            btn_wired.style = ft.ButtonStyle(bgcolor=ft.Colors.CYAN_900 if selected_type == "rtsp_wired" else ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.CYAN_200 if selected_type == "rtsp_wired" else ft.Colors.ON_SURFACE)
+            btn_imou.style = ft.ButtonStyle(bgcolor=ft.Colors.CYAN_900 if selected_type == "rtsp_wireless" else ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.CYAN_200 if selected_type == "rtsp_wireless" else ft.Colors.ON_SURFACE)
+            btn_webcam.style = ft.ButtonStyle(bgcolor=ft.Colors.CYAN_900 if selected_type == "webcam" else ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.CYAN_200 if selected_type == "webcam" else ft.Colors.ON_SURFACE)
+            btn_custom.style = ft.ButtonStyle(bgcolor=ft.Colors.CYAN_900 if selected_type == "p2p_dahua" else ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.CYAN_200 if selected_type == "p2p_dahua" else ft.Colors.ON_SURFACE)
+            page.update()
+
+        btn_wired = ft.Button("Dahua Wired NVR", icon=ft.Icons.ROUTER_ROUNDED, style=ft.ButtonStyle(bgcolor=ft.Colors.CYAN_900, color=ft.Colors.CYAN_200), on_click=lambda _: handle_select_type("rtsp_wired", "Dahua Wired CH01", False))
+        btn_imou = ft.Button("IMOU Wireless", icon=ft.Icons.WIFI_ROUNDED, style=ft.ButtonStyle(bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.ON_SURFACE), on_click=lambda _: handle_select_type("rtsp_wireless", "IMOU Wireless Gate", False))
+        btn_webcam = ft.Button("PC Webcam", icon=ft.Icons.VIDEOCAM_ROUNDED, style=ft.ButtonStyle(bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.ON_SURFACE), on_click=lambda _: handle_select_type("webcam", "PC Webcam", False))
+        btn_custom = ft.Button("Custom RTSP/SN", icon=ft.Icons.LINK_ROUNDED, style=ft.ButtonStyle(bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH, color=ft.Colors.ON_SURFACE), on_click=lambda _: handle_select_type("p2p_dahua", "Custom RTSP Stream", True))
+
+        type_selector_row = ft.Row([btn_wired, btn_imou, btn_webcam, btn_custom], spacing=6, wrap=True)
+
+        dialog = ft.AlertDialog(
+            open=True,
+            title=ft.Row([
+                ft.Icon(ft.Icons.AUTO_FIX_HIGH_ROUNDED, color=ft.Colors.CYAN_400),
+                ft.Text("Step-by-Step Camera Setup Wizard", weight=ft.FontWeight.BOLD, size=16)
+            ], spacing=8),
+            content=ft.Container(
+                width=520,
+                padding=10,
+                content=ft.Column(
+                    tight=True,
+                    spacing=12,
+                    controls=[
+                        ft.Text("Step 1: Choose Hardware Type", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_300),
+                        type_selector_row,
+                        ft.Divider(height=1),
+                        ft.Text("Step 2: Connection Settings", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_300),
+                        name_in,
+                        ft.Row([
+                            ft.Container(col={"xs": 6}, content=ip_in, expand=True),
+                            ft.Container(col={"xs": 6}, content=chan_in, expand=True),
+                        ], spacing=8),
+                        ft.Row([
+                            ft.Container(col={"xs": 6}, content=user_in, expand=True),
+                            ft.Container(col={"xs": 6}, content=pass_in, expand=True),
+                        ], spacing=8),
+                        group_in,
+                        ft.Divider(height=1),
+                        ft.Text("Step 3: Test & Deploy", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_300),
+                        ft.Row([
+                            ft.Button("⚡ TEST STREAM CONNECTION", icon=ft.Icons.SENSORS_ROUNDED, on_click=test_connection_action),
+                        ]),
+                        status_container,
+                    ]
+                )
+            ),
+            actions=[
+                ft.Button("Cancel", on_click=lambda _: page.pop_dialog()),
+                ft.Button("SAVE & DEPLOY CAMERA", style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE), on_click=save_wizard_camera)
+            ]
+        )
+        page.show_dialog(dialog)
 
     def handle_toggle_camera_ai(cam_item: dict):
         cur_human = bool(cam_item.get("human_detection", 0))
@@ -1171,9 +1487,9 @@ def settingsView():
                         ft.IconButton(
                             icon=ft.Icons.DELETE_OUTLINED,
                             icon_size=18,
-                            icon_color=ft.Colors.ON_SURFACE_VARIANT,
+                            icon_color=ft.Colors.RED_300,
                             tooltip="Delete Camera Setup",
-                            on_click=lambda e, cid=c["id"]: handle_delete_camera(cid)
+                            on_click=lambda e, target_cam=c: handle_confirm_delete_camera(target_cam)
                         )
                     ], spacing=2)
                 ])
@@ -1239,8 +1555,35 @@ def settingsView():
                 # Initialize New Hardware Source Form
                 ft.Row([
                     ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE_ROUNDED, color=ft.Colors.BLUE_400, size=18),
-                    ft.Text("INITIALIZE NEW HARDWARE SOURCE", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
+                    ft.Text("INITIALIZE / EDIT HARDWARE SOURCE", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
                 ], spacing=8),
+
+                # Existing DB Cameras Picker Dropdown for 1-Click Select & Auto-Fill
+                ft.Container(
+                    padding=ft.Padding(0, 0, 0, 4),
+                    content=ft.Dropdown(
+                        label="⚡ QUICK SELECT SAVED CAMERA / SN FROM DATABASE (AUTO-FILL)",
+                        hint_text="Select any camera stored in Database to auto-fill details...",
+                        dense=True,
+                        text_size=11,
+                        options=[
+                            ft.dropdown.Option(
+                                str(c["id"]),
+                                f"[{c.get('camera_group', 'Zone-01')}] {c['name']} - ({c['source']})"
+                            ) for c in cameras
+                        ],
+                        on_select=lambda e: (
+                            next((
+                                (
+                                    set_cam_name(c["name"]),
+                                    set_cam_source(c["source"]),
+                                    set_cam_group(c.get("camera_group", "Zone-01")),
+                                    set_cam_type(c.get("device_type", "p2p_dahua"))
+                                ) for c in cameras if str(c["id"]) == e.control.value
+                            ), None)
+                        )
+                    )
+                ),
 
                 ft.ResponsiveRow([
                     ft.Container(
@@ -1294,31 +1637,51 @@ def settingsView():
 
                 ft.Row([
                     ft.Button(
-                        "⚡ IMPORT ALL 16 DAHUA CHANNELS",
-                        icon=ft.Icons.AUTO_AWESOME_ROUNDED,
+                        "✨ STEP-BY-STEP SETUP WIZARD",
+                        icon=ft.Icons.AUTO_FIX_HIGH_ROUNDED,
+                        style=ft.ButtonStyle(
+                            bgcolor=ft.Colors.BLUE_900,
+                            color=ft.Colors.CYAN_200,
+                            padding=ft.Padding(14, 10, 14, 10)
+                        ),
+                        tooltip="Open step-by-step camera setup wizard with live connection testing",
+                        on_click=handle_open_step_by_step_wizard
+                    ),
+                    ft.Button(
+                        "🔑 ADD BY SERIAL (SN)",
+                        icon=ft.Icons.QR_CODE_ROUNDED,
+                        style=ft.ButtonStyle(
+                            bgcolor=ft.Colors.PURPLE_900,
+                            color=ft.Colors.PURPLE_200,
+                            padding=ft.Padding(14, 10, 14, 10)
+                        ),
+                        tooltip="Easily add any Wired or Wireless CCTV camera by typing its Serial Number (SN)",
+                        on_click=handle_open_quick_sn_dialog
+                    ),
+                    ft.Button(
+                        "⚡ BULK IMPORT WIRED NVR",
+                        icon=ft.Icons.ROUTER_ROUNDED,
                         style=ft.ButtonStyle(
                             bgcolor=ft.Colors.CYAN_900,
                             color=ft.Colors.CYAN_200,
                             padding=ft.Padding(14, 10, 14, 10)
                         ),
-                        tooltip="Import all 16 Dahua NVR channels across Zone-01 to Zone-04 into Database",
-                        on_click=lambda e: (
-                            camera_service.import_all_dahua_channels(ip="192.168.100.93", user="admin", password="12345asd@"),
-                            set_refresh_key(refresh_key + 1),
-                            page.show_dialog(
-                                ft.AlertDialog(
-                                    title=ft.Row([
-                                        ft.Icon(ft.Icons.CHECK_CIRCLE_ROUNDED, color=ft.Colors.CYAN_400),
-                                        ft.Text("Dahua 16 Channels Imported", weight=ft.FontWeight.BOLD, size=15)
-                                    ], spacing=8),
-                                    content=ft.Text("Successfully imported all 16 Dahua NVR channels (CH01-CH16) into Zone-01 through Zone-04!", font_family=AppFonts.MYANMAR, size=13),
-                                    actions=[ft.Button("OK", on_click=lambda e: page.pop_dialog())]
-                                )
-                            )
-                        )
+                        tooltip="Bulk import/update all Wired NVR CCTV channels (CH01-CH16) into Database",
+                        on_click=handle_open_wired_import_dialog
                     ),
                     ft.Button(
-                        "DEPLOY SOURCE TO REGISTRY",
+                        "🧹 PURGE ALL",
+                        icon=ft.Icons.DELETE_SWEEP_ROUNDED,
+                        style=ft.ButtonStyle(
+                            bgcolor=ft.Colors.RED_900,
+                            color=ft.Colors.WHITE,
+                            padding=ft.Padding(12, 10, 12, 10)
+                        ),
+                        tooltip="Clear all old/stale camera entries from database registry to start fresh",
+                        on_click=handle_purge_all_cameras
+                    ),
+                    ft.Button(
+                        "DEPLOY SOURCE",
                         icon=ft.Icons.SEND_ROUNDED,
                         style=ft.ButtonStyle(
                             bgcolor=ft.Colors.BLUE_700,
@@ -1327,7 +1690,7 @@ def settingsView():
                         ),
                         on_click=handle_add_camera
                     )
-                ], alignment=ft.MainAxisAlignment.END, spacing=10)
+                ], alignment=ft.MainAxisAlignment.END, spacing=8, wrap=True)
             ]
         )
     )
@@ -1423,6 +1786,7 @@ def settingsView():
         {"index": 0, "label": "PREFERENCES", "icon": ft.Icons.TUNE_ROUNDED},
         {"index": 1, "label": "BOT PROTOCOLS", "icon": ft.Icons.TELEGRAM_ROUNDED},
         {"index": 2, "label": "CCTV SOURCES", "icon": ft.Icons.VIDEOCAM_ROUNDED},
+        {"index": 4, "label": "TARGET FACES", "icon": ft.Icons.FACE_UNLOCK_ROUNDED},
     ]
 
     if user and user.is_admin():
@@ -1473,6 +1837,12 @@ def settingsView():
             scroll=ft.ScrollMode.HIDDEN,
             controls=[cctv_config_card]
         )
+    elif active_tab == 4:
+        tab_body = ft.Column(
+            spacing=14,
+            scroll=ft.ScrollMode.HIDDEN,
+            controls=[TargetFaceManager()]
+        )
     elif active_tab == 3 and user and user.is_admin():
         tab_body = ft.Column(
             spacing=14,
@@ -1481,6 +1851,7 @@ def settingsView():
         )
     else:
         tab_body = ft.Container()
+
 
     return ft.Container(
         expand=True,

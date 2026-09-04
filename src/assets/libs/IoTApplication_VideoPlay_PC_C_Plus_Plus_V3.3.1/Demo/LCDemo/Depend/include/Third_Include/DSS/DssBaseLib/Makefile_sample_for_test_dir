@@ -1,0 +1,59 @@
+# Copyright(c) 2011, ZheJiang Dahua, All rights reserved.
+# zhou_jiangang@dahuatech.com
+#
+# Makefile for test
+
+# <1> project special define
+
+# target, one of LIB_TARGET / DLL_TARGET / EXE_TARGET
+EXE_TARGET = test$(FN_D).exe
+
+# source file
+SRCS += \
+	$(wildcard *.cpp) \
+
+# compile flag
+CFLAGS += -g -pipe -Wall
+CFLAGS += \
+	-I../DOAXBase/AX_API \
+	-I../DOAXBase/TPLayer \
+	-I../DOAXBase/HTTP \
+	-I../DOAXBase/RTSP \
+	-I../DOAXBase/RTP \
+	-I../DOAXBase/tinyxml \
+	-I../DOAXBase/Utils \
+	-I../DOAXBase \
+	-I../ \
+	-I../libdsl \
+	-I../gtestdsl \
+	-I../dslalien \
+	-I../dslalien/curl \
+	-I../dslalien/curl/include/curl \
+
+
+# link flag
+LDFLAGS += -L../DOAXBase -lDOAXBase$(FN_D) \
+	-L../libdsl -Wl,-rpath,../libdsl -ldsl$(FN_D) \
+	-L../dslalien -Wl,-rpath,../dslalien -ldslalien$(FN_D) \
+	-L../gtestdsl -lgtestdsl$(FN_D) \
+	-lssl -lpthread -ldl -luuid
+
+ifeq ($(MAC),1)
+LDFLAGS += -liconv
+else ifeq ($(MAC_ARMV7),1)
+LDFLAGS += -liconv
+else
+LDFLAGS += -lrt
+endif
+
+# include template
+TOP_DIR?=..
+include ../Makefile.template
+
+
+# extra depend, must place after Makefile.template
+$(EXE_TARGET) : ../DOAXBase/libDOAXBase$(FN_D).a \
+	../libdsl/libdsl$(FN_D).so \
+	../dslalien/libdslalien$(FN_D).so \
+	../gtestdsl/libgtestdsl$(FN_D).a \
+

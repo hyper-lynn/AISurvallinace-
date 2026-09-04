@@ -1,0 +1,404 @@
+﻿#ifndef _LCOPENSDK_DEFINE_H__
+#define _LCOPENSDK_DEFINE_H__
+
+namespace Dahua {
+	namespace LCOpenSDK {
+
+/////////////////////////////////////////
+//参数相关枚举
+
+//码流类型
+typedef enum
+{
+	E_STREAM_TYPE_UNKNOWN       = -1, //
+	E_STREAM_TYPE_MAIN          = 0, //主码流
+	E_STREAM_TYPE_MINOR1        = 1, //辅码流1
+	E_STREAM_TYPE_MINOR2        = 2, //辅码流2
+	E_STREAM_TYPE_MINOR3        = 3, //辅码流3
+	E_STREAM_TYPE_COUNT,
+}E_STREAM_TYPE;
+
+//HLS类型
+typedef enum
+{
+	E_HLS_TYPE_UNKNOWN                  = -1, //
+	E_HLS_TYPE_PLAYBACK_DH_HLS          = 0, //回放-大华HLS
+	E_HLS_TYPE_PLAYBACK_STANDARD_HLS    = 1, //回放-标准HLS
+	E_HLS_TYPE_LIVE_DH_HLS              = 2, //直播-大华HLS
+	E_HLS_TYPE_LIVE_STANDARD_HLS        = 3, //直播-标准HLS
+	E_HLS_TYPE_PLAYBACK_AMAZON_HLS      = 4, //回放-amazon hsl
+	E_HLS_TYPE_PLAYBACK_SAAS_HLS        = 5, //回放-saas
+	E_HLS_TYPE_COUNT,
+}E_HLS_TYPE;
+
+//视频格式类型
+typedef enum
+{
+	E_MEDIA_FORMAT_UNKNOWN          = -1, //
+	E_MEDIA_FORMAT_MEDIA_DAV        = 0, //DAV 格式
+	E_MEDIA_FORMAT_MEDIA_MP4        = 1, //MP4 格式
+	E_MEDIA_FORMAT_MEDIA_AVI        = 2, //AVI 格式
+	E_MEDIA_FORMAT_MEDIA_ASF        = 3, //ASF 格式
+	E_MEDIA_FORMAT_MEDIA_FLV        = 4, //FLV 格式
+	E_MEDIA_FORMAT_MEDIA_MOV        = 5, //MOV 格式
+	E_MEDIA_FORMAT_MEDIA_MP464      = 6, //MP464 格式
+	E_MEDIA_FORMAT_MEDIA_MOV64      = 7, //MOV64 格式
+	E_MEDIA_FORMAT_MEDIA_MP4NOSEEK  = 8, //MP4NOSEEK 格式
+	E_MEDIA_FORMAT_MEDIA_WAV        = 9, //WAV 格式
+	E_MEDIA_FORMAT_COUNT,
+}E_MEDIA_FORMAT;
+
+//媒体类型
+typedef enum
+{
+	E_MEDIA_TYPE_UNKNOWN    = -1, //
+	E_MEDIA_TYPE_VIDEO      = 0, //视频
+	E_MEDIA_TYPE_AUDIO      = 1, //音频
+	E_MEDIA_TYPE_ALL        = 2, //视频+音频
+	E_MEDIA_TYPE_COUNT,
+}E_MEDIA_TYPE;
+
+//云存储录像类型
+typedef enum
+{
+	E_CLOUD_RECORD_TYPE_UNKNOWN     = -1, //
+	E_CLOUD_RECORD_TYPE_MANUAL      = 1, //手动录像(X-MINI 设备功能
+	E_CLOUD_RECORD_TYPE_LEAVE_MSG   = 2, //留言（TC5S需求）
+	E_CLOUD_RECORD_TYPE_ASK_HELP    = 3, //求救录像(TC5S 需求>已废弃）
+	E_CLOUD_RECORD_TYPE_ALARM       = 1000, //告警录像(原报警录像)
+	E_CLOUD_RECORD_TYPE_HEAD_CHECK  = 1001, //人头检测录像(TC5S需求)
+	E_CLOUD_RECORD_TYPE_TIMING      = 2000, //定时录像
+	E_CLOUD_RECORD_TYPE_COUNT       = 6, //已知类型6种
+}E_CLOUD_RECORD_TYPE;
+
+//切片地址前缀类型
+typedef enum
+{
+	E_SLICE_PREFIX_TYPE_UNKNOWN     = -1, //
+	E_SLICE_PREFIX_TYPE_WITH_HOST   = 0, //以rest host 为切片前缀
+	E_SLICE_PREFIX_TYPE_FROM_URL    = 1, //从m3u8地址中截取切片前缀
+	E_SLICE_PREFIX_TYPE_COUNT,
+}E_SLICE_PREFIX_TYPE;
+
+//拉流方式
+typedef enum
+{
+	E_STREAM_MODE_UNCERTAINTY   = -1, //未确定拉流方式
+	E_STREAM_MODE_P2P           = 0, //使用p2p拉流
+	E_STREAM_MODE_MTS           = 1, //使用MTS拉流
+	E_STREAM_MODE_COUNT，
+}E_STREAM_MODE;
+
+//日志等级
+typedef enum
+{
+	E_LOG_LEVEL_UNKNOWN     = -1, //
+	E_LOG_LEVEL_FAULT       = 0, //致命错误
+	E_LOG_LEVEL_ERR         = 1, //错误
+	E_LOG_LEVEL_WARNNING    = 2, //警告，可能导致出错
+	E_LOG_LEVEL_INFO        = 3, //当前运行状态
+	E_LOG_LEVEL_DEBUG       = 4, //详细调试信息
+	E_LOG_LEVEL_ALL         = 5, //所有日志信息
+	E_LOG_LEVEL_COUNT,
+}E_LOG_LEVEL;
+
+//加密结果
+typedef enum
+{
+    E_ENCRYPT_RESULT_UNKNOWN        = -1, //
+    E_ENCRYPT_RESULT_SUCCESS        = 0, //加密成功
+    E_ENCRYPT_RESULT_NOT_WHOLE      = 1, //非完整帧
+    E_ENCRYPT_RESULT_ENCRYPTED      = 2, //已经加过密
+    E_ENCRYPT_RESULT_BUF_NOT_ENOUGH = 3, //缓存区长度不足
+    E_ENCRYPT_RESULT_INTERNAL_ERROR = 4, //内部错误
+    E_ENCRYPT_RESULT_COUNT,
+}E_ENCRYPT_RESULT;
+
+//解密结果
+typedef enum
+{
+    E_DECRYPT_RESULT_UNKNOWN                = -1, //
+    E_DECRYPT_RESULT_SUCCESS                = 0, //解密成功
+    E_DECRYPT_RESULT_NOT_WHOLE              = 1, //非完整帧
+    E_DECRYPT_RESULT_KEY_ERROR              = 2, //秘钥错误
+    E_DECRYPT_RESULT_UNENCRYPTED            = 3, //未加密数据
+    E_DECRYPT_RESULT_UNSUPPORT_ENCRYPTION   = 4, //不支持的加密类型
+    E_DECRYPT_RESULT_BUF_NOT_ENOUGH         = 5, //缓存区长度不够
+    E_DECRYPT_RESULT_INTERNAL_ERROR         = 6, //内部错误
+    E_DECRYPT_RESULT_COUNT,
+}E_DECRYPT_RESULT;
+
+//秘钥计算规则版本
+typedef enum
+{
+    E_RULE_VERSION_UNKNOWN      = -1, //
+    E_RULE_VERSION_EASY4IP      = 0, //easy4ip 加密规则
+    E_RULE_VERSION_LECHANGE     = 1, //乐橙加密规则
+    E_RULE_VERSION_DAHUAPASS    = 2, //统一PASS加密规则
+    E_RULE_VERSION_COUNT,
+}E_RULE_VERSION;
+
+//获取登录句柄失败错误码
+typedef enum
+{
+    E_LOGIN_ERROR_CODE_UNKNOWN                          = -1, //
+    E_LOGIN_ERROR_CODE_P2P_FAILED                       = 0, //p2p打洞失败
+    E_LOGIN_ERROR_CODE_KEY_MISMATCH                     = 1, //密码不正确
+    E_LOGIN_ERROR_CODE_USER_NOTEXIST                    = 2, //账户不存在
+    E_LOGIN_ERROR_CODE_TIMEOUT                          = 3, //连接超时
+    E_LOGIN_ERROR_CODE_LOGIN_REPEAT                     = 4, //重复登录
+    E_LOGIN_ERROR_CODE_USER_LOCKED                      = 5, //账户被锁定
+    E_LOGIN_ERROR_CODE_USER_BLACKLIST                   = 6, //账户被加入黑名单
+    E_LOGIN_ERROR_CODE_SYSTEM_BUSY                      = 7, //系统繁忙(资源不足)
+    E_LOGIN_ERROR_CODE_SUBCONNECT_FAILED                = 8, //子链接失败
+    E_LOGIN_ERROR_CODE_MAINCONNECT_FAILED               = 9, //主链接失败
+    E_LOGIN_ERROR_CODE_OVER_MAX_CONNECT                 = 10, //超出最大连接数
+    E_LOGIN_ERROR_CODE_ONLY_SUPPORT_THREE_PROTOCOL      = 11, //只支持三代协议
+    E_LOGIN_ERROR_CODE_NO_USB_KEY                       = 12, //没有插入U盾
+    E_LOGIN_ERROR_CODE_IP_UNAUTHORIZED                  = 13, //客户端IP地址没有登录权限
+    E_LOGIN_ERROR_CODE_KEY_MISMATCH_OR_USER_NOTEXIST    = 14, //密码不正确或者账户不存在
+    E_LOGIN_ERROR_CODE_COUNT,
+}E_LOGIN_ERROR_CODE;
+
+//设备状态，androi，ios有点不一样，参照ios文档
+typedef enum
+{
+    E_DEVICE_STATE_ON_LINE = 0, //在线
+    E_DEVICE_STATE_OFF_LINE = 1, //离线
+    E_DEVICE_STATE_UNKNOWN, //未知
+}E_DEVICE_STATE;
+
+//回放倍数控制
+typedef enum
+{
+    E_SPEED_MODE_NORMAL     = 0, //正常回放
+    E_SPEED_MODE_DOWNLOAD_2 = 1, //下载2倍速度
+    E_SPEED_MODE_DOWNLOAD_4 = 2, //下载4倍速度
+    E_SPEED_MODE_DOWNLOAD_8 = 3, //下载8倍速度
+    E_SPEED_MODE_DOWNLOAD_16 = 4, //下载16倍速度
+}E_SPEED_MODE;
+
+//录像来源类型
+typedef enum
+{
+    E_RECSOURCE_TYPE_ALL = 1,     //所有
+    E_RECSOURCE_TYPE_DEVICE,      //设备录像
+    E_RECSOURCE_TYPE_PLATFORM,    //平台录像
+}E_RECSOURCE_TYPE;
+
+//视频转换类型
+typedef enum
+{
+    E_MEDIA_CONVERT_DAV = 0, //
+    E_MEDIA_CONVERT_MP4 = 1,
+    E_MEDIA_CONVERT_AVI = 2,
+    E_MEDIA_CONVERT_ASF = 3,
+    E_MEDIA_CONVERT_FLV = 4,
+    E_MEDIA_CONVERT_MOV = 5,
+    E_MEDIA_CONVERT_MP464 = 6,
+    E_MEDIA_CONVERT_MOV64 = 7,
+    E_MEDIA_CONVERT_MP4NOSEEK = 8,
+    E_MEDIA_CONVERT_WAV = 9,
+    E_MEDIA_CONVERT_TS = 10,
+    E_MEDIA_CONVERT_PS = 11,
+}E_MEDIA_CONVERT_TYPE;
+
+//码流类型，用于netsdk自适应编码缓冲策略
+typedef enum
+{
+    E_RELA_PLAY_TYPE_REALPLAY       = 0,
+    E_RELA_PLAY_TYPE_MULTIPLAY      = 1,
+    E_RELA_PLAY_TYPE_REALPLAY_0     = 2,
+    E_RELA_PLAY_TYPE_REALPLAY_1     = 3,
+    E_RELA_PLAY_TYPE_REAL_PLAY_2    = 4,
+    E_RELA_PLAY_TYPE_REALPLAY_3     = 5,
+    E_RELA_PLAY_TYPE_MULTIPLAY_1    = 6,
+    E_RELA_PLAY_TYPE_MULTIPLAY_4    = 7,
+    E_RELA_PLAY_TYPE_MULTIPLAY_8    = 8,
+    E_RELA_PLAY_TYPE_MULTIPLAY_9    = 9,
+    E_RELA_PLAY_TYPE_MULTIPLAY_16   = 10,
+    E_RELA_PLAY_TYPE_MULTIPLAY_6    = 11,
+    E_RELA_PLAY_TYPE_MULTIPLAY_12   = 12,
+    E_RELA_PLAY_TYPE_REALPLAY_TEST  = 255,
+}E_RELA_PLAY_TYPE;
+
+/////////////////////////////////////////
+//回调相关枚举
+
+//onPlayerResult回调type参数定义
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_RTSP        = 0, //RTSP业务(包括实时预览、本地录像回放、对讲)
+    E_RESULT_PROTO_TYPE_HLS         = 1, //HLS业务(包括云录像播放、云录像下载)
+    E_RESULT_PROTO_TYPE_FILE        = 2, //FILE业务(包括本地文件播放)
+    E_RESULT_PROTO_TYPE_NETSDK      = 3, //NETSDK业务(包括大华P2P设备实时预览、录像回放)
+    E_RESULT_PROTO_TYPE_SIP         = 4, //SIP业务(包括大华Meeting)
+    E_RESULT_PROTO_TYPE_DHHTTP      = 5, //HTTP优化拉流业务(包括大华Meeting)
+    E_RESULT_PROTO_TYPE_DPSDK       = 6, //DPSDK业务
+    E_RESULT_PROTO_TYPE_Express     = 7, //Express业务
+    E_RESULT_PROTO_TYPE_CloudBase   = 8, //视频云业务
+    E_RESULT_PROTO_TYPE_RTP         = 9, //
+    E_RESULT_PROTO_TYPE_FINANCECLOUD    = 10, //招行金融云
+    E_RESULT_PROTO_TYPE_COMMUNITYCLOUD  = 11, //社区云
+    E_RESULT_PROTO_TYPE_MSP             = 12, //MSP
+    E_RESULT_PROTO_TYPE_P2P             = 13, //P2P
+    E_RESULT_PROTO_TYPE_REST            = 99, //REST业务(涉及以上RTSP、HLS、SIP业务)
+
+    E_RESULT_PROTO_TYPE_TALK_RESPONSE_SESSIONID       = 34712, //AudioSession
+    E_RESULT_PROTO_TYPE_TALK_RESPONSE_PORT            = 34713, //AudioPort
+    E_RESULT_PROTO_TYPE_TALK_RESPONSE_SESSIONID_VIDEO = 34714, //VideoSession
+    E_RESULT_PROTO_TYPE_TALK_RESPONSE_PORT_VIDEO      = 34715, //VideoPort
+}E_RESULT_PROTO_TYPE;
+
+//E_RESULT_PROTO_TYPE_RTSP业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_RTSP_STATE_PACKET_COMPONENT_ERROR = -1, //组件内部调用流媒体接口失败
+    E_RESULT_PROTO_TYPE_RTSP_STATE_PACKET_FRAME_ERROR = 0,     //组帧失败
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_TEARDOWN_ERROR,        //内部要求关闭,如连接断开等
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_DESCRIBE_READY,        //会话已经收到Describe响应
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_AUTHORIZATION_FAIL,    //RTSP鉴权失败
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_PLAY_READY,            //收到PLAY响应
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_FILE_PLAY_OVER,        //录像文件回放正常结束
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_PAUSE_READY,           //收到PAUSE响应
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_KEY_MISMATCH,          //密钥不正确
+	E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_LIVE_PAUSE_ENABLE,     //服务端直播支持PAUSE , 调用stream_inquirePause接口后会收到该消息或者STATE_RTSP_LIVE_PAUSE_DISABLE 消息
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_LIVE_PAUSE_DISABLE,    //服务端直播不支持PAUSE
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_TALK_BUSY_LINE,        //对讲忙线
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_TALK_CHECK_FAILED,     //对讲不满足操作条件
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_SERVICE_UNAVAILABLE =  99,  // 基于503 错误码的连接最大数错误
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_USER_INFO_BASE_START = 100, // 用户信息起始码, 服务端上层传过来的信息码会在该起始码基础上累加
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_STREAM_LIMIT_NOTIFY = 101,         //流量限制通知
+    E_RESULT_PROTO_TYPE_RTSP_STATE_RTSP_CONCURRENT_LIMIT_NOTIFY = 102,     //并发限制通知
+}E_RESULT_PROTO_TYPE_RTSP_STATE;
+
+//E_RESULT_PROTO_TYPE_DHHTTP业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_COMPONENT_ERROR = -1,           //组件内部调用流媒体接口失败
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_OK = 1000,                      //开启播放成功
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_PLAY_FILE_OVER = 2000,          //回放时，当前文件播放完毕
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_BAD_REQUEST = 400000,           //非法请求，关闭客户端
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_UNAUTHORIZED = 401000,          //未授权，用户名密码错误
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_FORBIDDEN = 403000,             //禁止访问，关闭客户端
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_NOTFOUND = 404000,             //未找到，关闭客户端
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_REQ_TIMEOUT = 408000,          //请求超时，指拉流成功，但后续网络异常，导致拉流断开
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_SERVER_ERROR = 500000,          //服务器内部错误，关闭客户端
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_SERVER_UNVALILABLE = 503000,    //服务不可用
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_FLOWLIMIT      = 503006,        //mts限流
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_P2P_MAXCONNECT = 503007,        //p2p达到最大链接数
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_GATEWAY_TIMEOUT    = 504000,    //网络不通
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_CLIENT_ERROR       = 1000000,   //客户端内部错误，一般代码逻辑错误
+    E_RESULT_PROTO_TYPE_DHHTTP_STATE_DHHTTP_KEY_ERROR          = 1000005,   //客户端密钥和服务端密钥不一致
+}E_RESULT_PROTO_TYPE_DHHTTP_STATE;
+
+//E_RESULT_PROTO_TYPE_HLS业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_HLS_STATE_DOWNLOAD_FAILD = 0,        //下载失败
+    E_RESULT_PROTO_TYPE_HLS_STATE_DOWNLOAD_BEGIN,        //开始下载
+    E_RESULT_PROTO_TYPE_HLS_STATE_DOWNLOAD_END,          //下载结束
+    E_RESULT_PROTO_TYPE_HLS_STATE_SEEK_SUCCESS,          //定位成功
+    E_RESULT_PROTO_TYPE_HLS_STATE_SEEK_FAILD,            //定位失败
+    E_RESULT_PROTO_TYPE_HLS_STATE_ABORT_DONE, //NOT USE
+    E_RESULT_PROTO_TYPE_HLS_STATE_RESUME_DONE, // NOT USE
+    E_RESULT_PROTO_TYPE_HLS_STATE_DOWNLOAD_TIMEOUT, //下载超时
+    E_RESULT_PROTO_TYPE_HLS_STATE_DOWNLOAD_INDEX_FAILED, //下载索引失败
+    E_RESULT_PROTO_TYPE_HLS_STATE_SLICE_DONE, //下载单个切片成功
+    E_RESULT_PROTO_TYPE_HLS_STATE_PAUSE_DONE, //暂停成功
+    E_RESULT_PROTO_TYPE_HLS_STATE_KEY_MISMATCH = 11,     //密钥不正确
+    E_RESULT_PROTO_TYPE_HLS_STATE_FRAME_EXTRACT_BEGIN, //抽帧开始
+    E_RESULT_PROTO_TYPE_HLS_STATE_FRAME_EXTRACT_FAILED, //抽帧失败
+	E_RESULT_PROTO_TYPE_HLS_STATE_EXTRACT_FAILED = 13,   //抽帧失败需要app设置播放速度为1
+}E_RESULT_PROTO_TYPE_HLS_STATE;
+
+//E_RESULT_PROTO_TYPE_FILE业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_FILE_INIT_FAILED = -1, //本地文件播放初始化失败
+    E_RESULT_PROTO_TYPE_FILE_SEEK_FAILED = 6, //拖拽失败
+    E_RESULT_PROTO_TYPE_FILE_SEEK_SUCCESS = 7, //拖拽成功
+    E_RESULT_PROTO_TYPE_FILE_CROSS_BORDER = 8, //拖拽越界
+}E_RESULT_PROTO_TYPE_FILE_STATE;
+
+//E_RESULT_PROTO_TYPE_NETSDK业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_NETSDK_STATE_NETSDK_FAILD = -1, //大华P2P设备播放或对讲失败
+    E_RESULT_PROTO_TYPE_NETSDK_STATE_NETSDK_SUCCESS = 0, //大华P2P设备播放或对讲成功
+    E_RESULT_PROTO_TYPE_NETSDK_STATE_NOT_AUTHORIZED = 25, //
+    E_RESULT_PROTO_TYPE_NETSDK_STATE_SEEK_SUCCESS = 10000, //
+}E_RESULT_PROTO_TYPE_NETSDK_STATE;
+
+//E_RESULT_PROTO_TYPE_SIP业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_SIP_STATE_PLAY_FAILED = 0, //大华Meeting失败
+}E_RESULT_PROTO_TYPE_SIP_STATE;
+
+//E_RESULT_PROTO_TYPE_REST业务对应code
+typedef enum
+{
+    E_RESULT_PROTO_TYPE_REST_STATE_CONNECTION_FAILED = 0, //REST连接失败
+}E_RESULT_PROTO_TYPE_REST_STATE;
+
+//E_RESULT_PROTO_TYPE_DPSDK/E_RESULT_PROTO_TYPE_EXPRESS对应业务code
+typedef enum
+{
+   E_INDUSTRYPLTM_TALK_STATE_START_TALK_SUCCESS = 1,   //打开对讲成功
+   E_INDUSTRYPLTM_TALK_STATE_START_TALK_FAILED,        //打开对讲失败
+   E_INDUSTRYPLTM_TALK_STATE_RESTART_TALK,             //重新对讲
+   E_INDUSTRYPLTM_TALK_STATE_STOP_TALK_FAILED,         //停止对讲失败
+   E_INDUSTRYPLTM_TALK_STATE_STOP_TALK_SUCCESS,        //停止对讲成功
+   E_INDUSTRYPLTM_TALK_STATE_TALK_EXCEPTION,           //对讲异常
+}E_INDUSTRYPLTM_TALK_STATE;
+
+//OC_RESULT_PROTO_TYPE_DPSDK、OC_RESULT_PROTO_TYPE_Express、OC_RESULT_PROTO_TYPE_CloudBase、OC_RESULT_PROTO_TYPE_FINANCECLOUD、OC_RESULT_PROTO_TYPE_COMMUNITYCLOUD 业务对应code
+typedef enum
+{
+    E_INDUSTRYPLTM_STATE_PLAY_FIRSTSTREAM = 1,     // 获取到第一帧数据,可去显示播放画面了
+    E_INDUSTRYPLTM_STATE_PLAY_END,                 // 视频播放结束
+    E_INDUSTRYPLTM_STATE_PLAY_NETWORK_ABORT,       // 网络异常
+    E_INDUSTRYPLTM_STATE_PLAY_FAILED,              // 播放异常，检查播放视频数据错误
+    E_INDUSTRYPLTM_STATE_PLAY_BAD_FILE,            // 异常文件，不支持的文件格式
+    E_INDUSTRYPLTM_STATE_PLAY_SEEK_FAILED,         // 拖拽失败
+    E_INDUSTRYPLTM_STATE_PLAY_SEEK_SUCCESS,        // 拖拽成功
+    E_INDUSTRYPLTM_STATE_PLAY_CROSS_BORDER,        // 拖拽越界
+    E_INDUSTRYPLTM_STATE_PLAY_DATA_OVER,           // 所有文件播放结束
+    E_INDUSTRYPLTM_STATE_PLAY_AUTHORITY,           // 播放无权限
+}E_INDUSTRYPLTM_STATE;
+
+//login 对应code
+typedef enum
+{
+    E_LOGIN_STATE_INIT = 1, //初始化
+    E_LOGIN_STATE_P2P_SUCCESS = 2, //预打洞成功
+    E_LOGIN_STATE_P2P_FAILED = 3, //预打洞失败
+    E_LOGIN_STATE_LOGIN_SUCCESS = 4, //登录成功
+    E_LOGIN_STATE_LOGIN_FAILED = 5, //登录失败
+}E_LOGIN_STATE;
+
+//convert 业务对应code
+typedef enum
+{
+    E_CONVERT_ERROR_NOERROR = 0, //
+    E_CONVERT_ERROR_INVALID_HANDLE = 1,        //无效句柄
+    E_CONVERT_ERROR_UNSUPPORT,             //解析或封装类型不支持
+    E_CONVERT_ERROR_THREAD,                //内部线程出错
+    E_CONVERT_ERROR_PARAM,                 //参数有误
+    E_CONVERT_ERROR_FILE_OPEN,             //文件打开出错，可能已被互斥打开
+    E_CONVERT_ERROR_FILE_READ,             //文件读取出错
+    E_CONVERT_ERROR_FILE_WRITE,            //文件写入出错
+    E_CONVERT_ERROR_FORMAT,                //格式有误，无法继续解析
+    E_CONVERT_ERROR_BUFFER_OVER_FLOW,      //内部缓冲溢出
+    E_CONVERT_ERROR_SYSOUTOFMEM,           //系统内存不足
+    E_CONVERT_ERROR_NO_IDR_FRAME,          //缺少I帧
+    E_CONVERT_ERROR_NO_OUTPUT,             //同步封装或解析逻辑中无数据输出
+    E_CONVERT_ERROR_ORDER,                 //调用顺序有误
+    E_CONVERT_ERROR_ENCRYPT_KEY,           //秘钥错误
+}E_CONVERT_ERROR;
+
+	} //namespace LCOpenSDK
+} //namespace Dahua
+
+#endif //_LCOPENSDK_DEFINE_H__

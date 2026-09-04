@@ -1,0 +1,413 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B12702AD-ABFB-343A-A199-8E24837244A3}</ProjectGuid>
+    <Keyword>Qt4VSv1.0</Keyword>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(QtMsBuild)'=='' or !Exists('$(QtMsBuild)\qt.targets')">
+    <QtMsBuild>$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
+    <Import Project="$(QtMsBuild)\qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Networkd.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <QtMoc>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+      <IncludePath>.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</IncludePath>
+      <Define>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</Define>
+    </QtMoc>
+    <QtUic>
+      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\ui_%(Filename).h</OutputFile>
+    </QtUic>
+    <QtRcc>
+      <ExecutionDescription>Rcc'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
+    </QtRcc>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Networkd.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <QtMoc>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+      <IncludePath>.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</IncludePath>
+      <Define>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</Define>
+    </QtMoc>
+    <QtUic>
+      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\ui_%(Filename).h</OutputFile>
+    </QtUic>
+    <QtRcc>
+      <ExecutionDescription>Rcc'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
+    </QtRcc>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include\;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
+      <AdditionalLibraryDirectories>.\Depend\lib\x64\LCOpenApiClient;.\Depend\lib\x64\Third;.\Depend\lib\x64\LCOpenSDK;.\Depend\lib\x64\DssBaseLib;$(QTDIR)\lib;.\Depend\ssl\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>qtmain.lib;libdsl.lib;LCOpenSDKmd.lib;LCOpenApiClientmd.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Network.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateMapFile>true</GenerateMapFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <QtMoc>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+      <IncludePath>.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include\;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</IncludePath>
+      <Define>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</Define>
+    </QtMoc>
+    <QtUic>
+      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\ui_%(Filename).h</OutputFile>
+    </QtUic>
+    <QtRcc>
+      <ExecutionDescription>Rcc'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
+    </QtRcc>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration);.\Src\Utils\CommonView;.\Src\OpenApi\Include\;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <StringPooling>true</StringPooling>
+      <AssemblerOutput>All</AssemblerOutput>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
+      <AdditionalLibraryDirectories>.\Depend\lib\LibCurl;.\Depend\lib\LCOpenApiClient;.\Depend\lib\Third;.\Depend\lib\LCOpenSDK;$(QTDIR)\lib;.\Depend\lib\DssBaseLib;.\Depend\ssl\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>qtmain.lib;LCOpenSDKmd.lib;LCOpenApiClientmd.lib;legacy_stdio_definitions.lib;libdsl.lib;libcurlmd.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Network.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateMapFile>true</GenerateMapFile>
+    </Link>
+    <QtMoc>
+      <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
+      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
+      <IncludePath>.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration);.\Src\Utils\CommonView;.\Src\OpenApi\Include\;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;%(AdditionalIncludeDirectories)</IncludePath>
+      <Define>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;%(PreprocessorDefinitions)</Define>
+    </QtMoc>
+    <QtUic>
+      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\ui_%(Filename).h</OutputFile>
+    </QtUic>
+    <QtRcc>
+      <ExecutionDescription>Rcc'ing %(Identity)...</ExecutionDescription>
+      <OutputFile>.\GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
+    </QtRcc>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <QtRcc Include="LCDemo.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Src\Ctrl\DevicesListCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\OpenApiCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\PlayCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\RealPlayCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\RecordListCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\RecordPlayCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\ThreadCtrl.cpp" />
+    <ClCompile Include="Src\Ctrl\TokenCtrl.cpp" />
+    <ClCompile Include="Src\main.cpp" />
+    <ClCompile Include="Src\Network\Network.cpp" />
+    <ClCompile Include="Src\Network\NetworkPrivate.cpp" />
+    <ClCompile Include="Src\Network\NetworkTimeout.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\algorithm\LCOpenApi_base64.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\algorithm\LCOpenApi_md5.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\algorithm\LCOpenApi_sha1.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\api\AccessToken.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\api\UserBind.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\api\UserBindSms.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\api\UserToken.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\cJSON\cJSON.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_ClientSdk.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_Common.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_ConstString.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_FreeBuffer.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_Reflection.cpp" />
+    <ClCompile Include="Src\OpenApi\Src\LCOpenApi_ReflectionObject.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\BaseScrollView.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\BaseWidget.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\BgColorBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\Calendar.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\CheckBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\DisableBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\IconBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\IconOverlapTextBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\IconTextBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\MyEditBox.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\MyEditBox2.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\MyMessageBox.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\ProgressSlider.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\RoundRectTextBtn.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\ScrollView.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\SearchBar.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\SplitLine.cpp" />
+    <ClCompile Include="Src\Utils\CommonView\TitleBar\PageTitle.cpp" />
+    <ClCompile Include="Src\Utils\CurlDownload.cpp" />
+    <ClCompile Include="Src\Utils\TimeHelper.cpp" />
+    <ClCompile Include="Src\View\DeviceList\DevicesListView.cpp" />
+    <ClCompile Include="Src\View\DeviceList\DeviceView.cpp" />
+    <ClCompile Include="Src\View\DeviceManage\DeviceAddView.cpp" />
+    <ClCompile Include="Src\View\DeviceManage\DeviceSetView.cpp" />
+    <ClCompile Include="Src\View\Login\LoginSelectView.cpp" />
+    <ClCompile Include="Src\View\MainForm.cpp" />
+    <ClCompile Include="Src\View\RecordList\RecordListView.cpp" />
+    <ClCompile Include="Src\View\RecordList\RecordThumbView.cpp" />
+    <ClCompile Include="Src\View\VideoPlay\PtzControlView.cpp" />
+    <ClCompile Include="Src\View\VideoPlay\RealPlayView.cpp" />
+    <ClCompile Include="Src\View\VideoPlay\RecordPlayView.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\DevicesListCtrl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\OpenApiCtrl.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration)\.;.\Src\Utils\CommonView;.\Src\OpenApi\Include;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\PlayCtrl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\RealPlayCtrl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\RecordListCtrl.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration)\.;.\Src\Utils\CommonView;.\Src\OpenApi\Include;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\RecordPlayCtrl.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration)\.;.\Src\Utils\CommonView;.\Src\OpenApi\Include;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\ThreadCtrl.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration)\.;.\Src\Utils\CommonView;.\Src\OpenApi\Include;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Src\Ctrl\TokenCtrl.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Depend\include\lcopensdk;.\Depend\include\curl;.\Depend\include\lcopensdk_include\lcopensdk_api;.\Depend\include;.\Depend\include\lcopensdk_include;.\Src;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration)\.;.\Src\Utils\CommonView;.\Src\OpenApi\Include;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\lib\DssBaseLib;.\Depend\ssl\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\Depend\include\LCOpenSDK;.\Depend\include\Third_Include;.\Depend\include\Third_Include\curl\win32;.\Depend\include\Third_Include\LCOpenApiClient;.\Depend\include;.\Depend\lib\DssBaseLib;.\Src\Utils\CommonView;.\Depend\include\Json;.\Src\OpenApi\Src;.\Depend\ssl\include;.\Src\OpenApi\Include;.\Src;.\Depend\include\lcopensdk_include\lcopensdk_api;.\GeneratedFiles;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;NDEBUG;TEST_MODEL;CURL_STATICLIB;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB</Define>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\Model\ChannelsListInfo.h" />
+    <ClInclude Include="Src\Model\OpenApiInfo.h" />
+    <ClInclude Include="Src\Model\ProtoType.h" />
+    <ClInclude Include="Src\Model\RecordInfo.h" />
+    <ClInclude Include="Src\Model\ThreadInfo.h" />
+    <QtMoc Include="Src\Network\Network.h" />
+    <ClInclude Include="Src\Network\NetworkPrivate.h" />
+    <QtMoc Include="Src\Network\NetworkTimeout.h" />
+    <ClInclude Include="Src\OpenApi\Include\api\AccessToken.h" />
+    <ClInclude Include="Src\OpenApi\Include\api\UserBind.h" />
+    <ClInclude Include="Src\OpenApi\Include\api\UserBindSms.h" />
+    <ClInclude Include="Src\OpenApi\Include\api\UserToken.h" />
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_ClientSdk.h" />
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_Common.h" />
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_ConstString.h" />
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_FreeBuffer.h" />
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_Reflection.h" />
+    <ClInclude Include="Src\OpenApi\Include\LCOpenApi_ReflectionObject.h" />
+    <ClInclude Include="Src\OpenApi\Src\algorithm\LCOpenApi_algorithm.h" />
+    <ClInclude Include="Src\OpenApi\Src\cJSON\cJSON.h" />
+    <ClInclude Include="Src\Utils\global.h" />
+    <ClInclude Include="Src\Utils\TimeHelper.h" />
+    <QtMoc Include="Src\View\MainForm.h" />
+    <QtMoc Include="Src\View\VideoPlay\RecordPlayView.h" />
+    <QtMoc Include="Src\View\VideoPlay\RealPlayView.h" />
+    <QtMoc Include="Src\View\VideoPlay\PtzControlView.h" />
+    <QtMoc Include="Src\View\RecordList\RecordThumbView.h" />
+    <QtMoc Include="Src\View\RecordList\RecordListView.h" />
+    <QtMoc Include="Src\View\Login\LoginSelectView.h" />
+    <QtMoc Include="Src\View\DeviceManage\DeviceSetView.h" />
+    <QtMoc Include="Src\View\DeviceManage\DeviceAddView.h" />
+    <QtMoc Include="Src\View\DeviceList\DeviceView.h" />
+    <QtMoc Include="Src\View\DeviceList\DevicesListView.h" />
+    <QtMoc Include="Src\Utils\CurlDownload.h" />
+    <QtMoc Include="Src\Utils\CommonView\SplitLine.h" />
+    <QtMoc Include="Src\Utils\CommonView\SearchBar.h" />
+    <QtMoc Include="Src\Utils\CommonView\ScrollView.h" />
+    <QtMoc Include="Src\Utils\CommonView\RoundRectTextBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\ProgressSlider.h" />
+    <QtMoc Include="Src\Utils\CommonView\MyMessageBox.h" />
+    <QtMoc Include="Src\Utils\CommonView\MyEditBox2.h" />
+    <QtMoc Include="Src\Utils\CommonView\MyEditBox.h" />
+    <QtMoc Include="Src\Utils\CommonView\IconTextBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\IconOverlapTextBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\IconBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\DisableBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\CheckBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\Calendar.h" />
+    <QtMoc Include="Src\Utils\CommonView\BgColorBtn.h" />
+    <QtMoc Include="Src\Utils\CommonView\BaseWidget.h" />
+    <QtMoc Include="Src\Utils\CommonView\BaseScrollView.h" />
+    <QtMoc Include="Src\Utils\CommonView\TitleBar\PageTitle.h" />
+    <QtMoc Include="Src\Model\PtzControlInfo.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties MocDir=".\GeneratedFiles\$(ConfigurationName)" UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" lupdateOptions="" lupdateOnBuild="0" lreleaseOptions="" Qt5Version_x0020_Win32="msvc2017" Qt5Version_x0020_x64="msvc2017_64" MocOptions="" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

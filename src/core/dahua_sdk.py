@@ -33,13 +33,15 @@ class DahuaSDK:
 
     def __init__(self, release_dir: Optional[str] = None):
         if release_dir is None:
-            # Default path in project assets
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            release_dir = os.path.join(
-                base_dir,
-                'src', 'assets', 'libs', 'IoTApplication_VideoPlay_PC_C_Plus_Plus_V3.3.1',
-                'Demo', 'x64', 'Release'
-            )
+            candidates = [
+                os.path.join(base_dir, 'src', 'assets', 'libs', 'IoTApplication_VideoPlay_PC_C_Plus_Plus_V3.3.1', 'Demo', 'x64', 'Release'),
+                os.path.join(base_dir, 'src', 'assets', 'libs', 'lcopensdk'),
+                os.path.join(base_dir, 'src', 'assets', 'libs'),
+                os.path.join(base_dir, 'assets', 'libs'),
+                os.path.join(os.getcwd(), 'libs'),
+            ]
+            release_dir = next((p for p in candidates if os.path.exists(os.path.join(p, 'LCOpenSDKmd.dll'))), candidates[0])
 
         self.release_dir = release_dir
         self.dll: Optional[ctypes.CDLL] = None
@@ -56,8 +58,9 @@ class DahuaSDK:
         if self.loaded and self.dll:
             return True
 
-        if not os.path.exists(self.release_dir):
-            logger.error(f"Release directory not found: {self.release_dir}")
+        dll_path = os.path.join(self.release_dir, 'LCOpenSDKmd.dll')
+        if not os.path.exists(self.release_dir) or not os.path.exists(dll_path):
+            logger.info(f"Dahua LCOpenSDK DLL (LCOpenSDKmd.dll) not found at {self.release_dir}. Direct stream mode active.")
             return False
 
         try:

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<title>S-Eye AI Surveillance - System Architecture & Model Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap');
+
+  @page {
+    size: A4;
+    margin: 18mm 15mm 20mm 15mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: 'Inter', 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.6;
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Cover Page */
+  .cover-page {
+    page-break-after: always;
+    height: 98vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-page::before {
+    content: "";
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+  }
+
+  .cover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 20px;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 20px;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+  }
+
+  .brand-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: linear-gradient(to right, #ffffff, #93c5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .doc-badge {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .cover-body {
+    margin-top: 60px;
+    margin-bottom: 60px;
+  }
+
+  .main-title {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    background: linear-gradient(to right, #ffffff, #e0e7ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .sub-title {
+    font-size: 17px;
+    color: #94a3b8;
+    font-weight: 400;
+    max-width: 650px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 24px;
+    border-radius: 12px;
+  }
+
+  .meta-item label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .meta-item span {
+    font-size: 14px;
+    color: #f1f5f9;
+    font-weight: 600;
+  }
+
+  .cover-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  /* Page Sections */
+  .page {
+    page-break-after: always;
+    padding-top: 10px;
+  }
+
+  .page:last-child {
+    page-break-after: avoid;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    margin-top: 25px;
+  }
+
+  .section-number {
+    background: #2563eb;
+    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    border-left: 3px solid #2563eb;
+    padding-left: 10px;
+  }
+
+  p {
+    margin-bottom: 12px;
+    color: #334155;
+    text-align: justify;
+  }
+
+  .highlight-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2563eb;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+
+  .highlight-box.warning {
+    border-left-color: #d97706;
+    background: #fffbeb;
+  }
+
+  .highlight-box.teal {
+    border-left-color: #0d9488;
+    background: #f0fdf4;
+  }
+
+  /* Cards Grid */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-purple { background: #f3e8ff; color: #6b21a8; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-orange { background: #ffedd5; color: #9a3412; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 12px;
+  }
+
+  th {
+    background: #0f172a;
+    color: #ffffff;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+  }
+
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  /* Code Block */
+  .code-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    padding: 14px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 14px 0;
+    line-height: 1.5;
+  }
+
+  .code-keyword { color: #38bdf8; }
+  .code-function { color: #818cf8; }
+  .code-string { color: #4ade80; }
+  .code-comment { color: #64748b; font-style: italic; }
+
+  /* Architecture Diagram SVG Styling */
+  .diagram-container {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .diagram-title {
+    color: #38bdf8;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Footer Running Header */
+  .running-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 6px;
+    margin-bottom: 20px;
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="brand-logo">
+      <div class="brand-icon">S</div>
+      <div class="brand-title">SHADOW EYE (S-EYE)</div>
+    </div>
+    <div class="doc-badge">TECHNICAL REPORT</div>
+  </div>
+
+  <div class="cover-body">
+    <div class="main-title">
+      Deep Learning Models &<br>Software Architecture Specification
+    </div>
+    <div class="sub-title">
+      S-Eye Tactical Intelligent Video Surveillance, 2.5D Real-Time Face Recognition, Pose Estimation, Fall Detection & Multimodal Gemini AI Integration
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-item">
+        <label>Document Type</label>
+        <span>Architecture & Model Whitepaper</span>
+      </div>
+      <div class="meta-item">
+        <label>Author / System Architect</label>
+        <span>Lead AI Security Architect</span>
+      </div>
+      <div class="meta-item">
+        <label>Primary AI Vision Models</label>
+        <span>YOLOv8 Pose, SCRFD-2.5G, ArcFace, MiniFASNetV2</span>
+      </div>
+      <div class="meta-item">
+        <label>Generative AI Engine</label>
+        <span>Gemini 3.6 Flash / Gemini Pro</span>
+      </div>
+      <div class="meta-item">
+        <label>Target Execution Hardware</label>
+        <span>NVIDIA GPU CUDA Provider (GTX / RTX)</span>
+      </div>
+      <div class="meta-item">
+        <label>Release Date</label>
+        <span>August 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div>CONFIDENTIAL - FOR INTERNAL & OPERATIONAL USE ONLY</div>
+    <div>VERSION 2.5.0</div>
+  </div>
+</div>
+
+<!-- PAGE 1: EXECUTIVE SUMMARY & CORE ARCHITECTURE -->
+<div class="page">
+  <div class="running-header">
+    <span>SHADOW EYE (S-EYE) PLATFORM TECHNICAL SPECIFICATION</span>
+    <span>SECTION 1: SYSTEM OVERVIEW & ARCHITECTURE</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-number">1</div>
+    <h2>Executive Summary & System Architecture Overview</h2>
+  </div>
+
+  <p>
+    <strong>Shadow Eye (S-Eye)</strong> သည် Dynamic Camera Stream များမှ ရရှိလာသော Real-time Video Stream များကို Advanced Computer Vision နှင့် Deep Learning Algorithm များကို အသုံးပြု၍ လူအဝင်အထွက်၊ Face Detection, 2.5D Anti-Spoofing Liveness Verification, 512-D Deep Face Recognition, Human Pose Estimation နှင့် Human Fall Detection များကို တိကျစွာ ခွဲခြားစိတ်ဖြာပေးသော <strong>Tactical AI Surveillance Platform</strong> ဖြစ်ပါသည်။
+  </p>
+
+  <div class="highlight-box">
+    <strong>စနစ်၏ ပန်းတိုင် (System Objective):</strong>
+    ကျူးကျော်ဝင်ရောက်သူများ သို့မဟုတ် Target သတ်မှတ်ထားသော လူပုဂ္ဂိုလ်များကို RTSP/Dahua CCTV Video Channel များမှ Real-Time သိရှိဖော်ထုတ်ပေးပြီး၊ မတော်တဆ လဲကျခြင်း (Fall Event) ဖြစ်ပွားပါက Telegram Bot Alert Dispatcher မှတစ်ဆင့် Instant Photo Snapshot နှင့်တကွ Operatives / Tactical Fast Response Team များထံ စက္ကန့်ပိုင်းအတွင်း သတိပေးချက် အလိုအလျောက် ပေးပို့ပေးရန် ဖြစ်ပါသည်။
+  </div>
+
+  <h3>၁.၁ အဓိက Software Architecture Layer (၆) ခု Breakdown</h3>
+
+  <div class="diagram-container">
+    <div class="diagram-title">S-Eye End-to-End Multi-Tier Architectural Pipeline</div>
+    <svg width="100%" height="210" viewBox="0 0 750 210" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="layerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#1e293b"/>
+          <stop offset="100%" stop-color="#0f172a"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Layer Boxes -->
+      <rect x="10" y="20" width="105" height="170" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="62" y="45" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">1. Stream Input</text>
+      <text x="62" y="70" fill="#94a3b8" font-size="9" text-anchor="middle">• RTSP H.264/265</text>
+      <text x="62" y="90" fill="#94a3b8" font-size="9" text-anchor="middle">• Dahua NetSDK</text>
+      <text x="62" y="110" fill="#94a3b8" font-size="9" text-anchor="middle">• Dahua P2P Cloud</text>
+      <text x="62" y="130" fill="#94a3b8" font-size="9" text-anchor="middle">• USB Webcams</text>
+      <text x="62" y="150" fill="#94a3b8" font-size="9" text-anchor="middle">• Frame Queue</text>
+
+      <line x1="115" y1="105" x2="130" y2="105" stroke="#38bdf8" stroke-width="2"/>
+
+      <rect x="135" y="20" width="125" height="170" rx="8" fill="#1e293b" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="197" y="45" fill="#c084fc" font-size="11" font-weight="bold" text-anchor="middle">2. AI Vision Engine</text>
+      <text x="197" y="70" fill="#94a3b8" font-size="9" text-anchor="middle">• YOLOv8 Pose AI</text>
+      <text x="197" y="90" fill="#94a3b8" font-size="9" text-anchor="middle">• SCRFD Face Detect</text>
+      <text x="197" y="110" fill="#94a3b8" font-size="9" text-anchor="middle">• Landmark Align</text>
+      <text x="197" y="130" fill="#94a3b8" font-size="9" text-anchor="middle">• Spine Angle Fall</text>
+      <text x="197" y="150" fill="#94a3b8" font-size="9" text-anchor="middle">• Frame-Skip Filter</text>
+
+      <line x1="260" y1="105" x2="275" y2="105" stroke="#c084fc" stroke-width="2"/>
+
+      <rect x="280" y="20" width="120" height="170" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="340" y="45" fill="#f59e0b" font-size="11" font-weight="bold" text-anchor="middle">3. 2.5D Verification</text>
+      <text x="340" y="70" fill="#94a3b8" font-size="9" text-anchor="middle">• MiniFASNetV2</text>
+      <text x="340" y="90" fill="#94a3b8" font-size="9" text-anchor="middle">• Fourier Spectrum</text>
+      <text x="340" y="110" fill="#94a3b8" font-size="9" text-anchor="middle">• ArcFace IR-50</text>
+      <text x="340" y="130" fill="#94a3b8" font-size="9" text-anchor="middle">• 512-D Embedding</text>
+      <text x="340" y="150" fill="#94a3b8" font-size="9" text-anchor="middle">• Liveness Score</text>
+
+      <line x1="400" y1="105" x2="415" y2="105" stroke="#f59e0b" stroke-width="2"/>
+
+      <rect x="420" y="20" width="115" height="170" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+      <text x="477" y="45" fill="#10b981" font-size="11" font-weight="bold" text-anchor="middle">4. FAISS Matching</text>
+      <text x="477" y="70" fill="#94a3b8" font-size="9" text-anchor="middle">• Cosine Similarity</text>
+      <text x="477" y="90" fill="#94a3b8" font-size="9" text-anchor="middle">• L2 Vector Index</text>
+      <text x="477" y="110" fill="#94a3b8" font-size="9" text-anchor="middle">• SQLite Target DB</text>
+      <text x="477" y="130" fill="#94a3b8" font-size="9" text-anchor="middle">• VIP/Employee Tag</text>
+      <text x="477" y="150" fill="#94a3b8" font-size="9" text-anchor="middle">• Threshold Check</text>
+
+      <line x1="535" y1="105" x2="550" y2="105" stroke="#10b981" stroke-width="2"/>
+
+      <rect x="555" y="20" width="185" height="80" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="647" y="42" fill="#ef4444" font-size="11" font-weight="bold" text-anchor="middle">5. Alert Dispatcher & Bot</text>
+      <text x="647" y="60" fill="#94a3b8" font-size="9" text-anchor="middle">• Telegram API Snapshot Alert</text>
+      <text x="647" y="78" fill="#94a3b8" font-size="9" text-anchor="middle">• 30s Rate Limit Cooldown Manager</text>
+
+      <rect x="555" y="110" width="185" height="80" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="647" y="132" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">6. UI & Gemini Assistant</text>
+      <text x="647" y="150" fill="#94a3b8" font-size="9" text-anchor="middle">• Flet Desktop/Web Client UI</text>
+      <text x="647" y="168" fill="#94a3b8" font-size="9" text-anchor="middle">• Gemini 3.6 Multimodal Bot</text>
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-blue">Layer 1</span> Stream Ingestion & Native Binding
+      </div>
+      <p style="font-size: 11.5px; margin: 0;">
+        OpenCV, PyAV နှင့် Dahua <code>NetSDK</code> (C-DLL Binding) သို့မဟုတ် <code>P2P Cloud Client</code> များကို သုံး၍ Multiple Camera Channel များမှ RTSP Video Buffer ကို FPS ညှိယူပြီး Frame Queue ထဲသို့ Low-latency ဖြင့် ရယူပါသည်။
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-purple">Layer 2</span> Object Detection & Pose AI
+      </div>
+      <p style="font-size: 11.5px; margin: 0;">
+        <strong>YOLOv8 Pose Model</strong> ကို အသုံးပြု၍ Human Pose Bounding Box များနှင့် Keypoint (၁၇) ခုကို ရှာဖွေပြီး၊ Spine Angle Vector Formula ဖြင့် မတော်တဆ လဲကျခြင်း (Fall Event) ကို တွက်ချက်ခွဲခြားပါသည်။
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-orange">Layer 3 & 4</span> Face Detection, Liveness & Embedding
+      </div>
+      <p style="font-size: 11.5px; margin: 0;">
+        <strong>SCRFD-2.5G</strong> မှ မျက်နှာကို Alignment လုပ်ပြီး၊ <strong>MiniFASNetV2</strong> မှ 2.5D Real/Fake Face စစ်ဆေးကာ၊ <strong>ArcFace IR-50</strong> မှ 512-D Normalized Vector Embedding ထုတ်ယူပါသည်။
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-green">Layer 5 & 6</span> Vector Matcher & Multi-Destination Dispatch
+      </div>
+      <p style="font-size: 11.5px; margin: 0;">
+        <strong>FAISS Index / Cosine Matcher</strong> မှ Target Face ကို Match လုပ်ကာ၊ Telegram Dispatcher မှ Multi-Recipient Group/Channel အသီးသီးသို့ Snapshot Photo Alert ပို့ပေးပြီး Gemini AI Assistant မှ Remote Command များ ဖြေကြားပေးပါသည်။
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: DEEP DIVE INTO AI MODELS -->
+<div class="page">
+  <div class="running-header">
+    <span>SHADOW EYE (S-EYE) PLATFORM TECHNICAL SPECIFICATION</span>
+    <span>SECTION 2: AI MODELS & MATHEMATICAL PRINCIPLES</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-number">2</div>
+    <h2>Deep Learning Models & Working Principles</h2>
+  </div>
+
+  <p>
+    S-Eye Platform တွင် အသုံးပြုထားသော Deep Learning Model များကို NVIDIA GPU (CUDA Provider) ပေါ်တွင် အမြန်ဆုံး လည်ပတ်နိုင်ရန် FP16 / ONNX Runtime architecture များဖြင့် Vectorize လုပ်ထားပါသည်။
+  </p>
+
+  <h3>၂.၁ YOLOv8 Pose Detection & Strict Fall Angle Math Model</h3>
+  <p>
+    <code>yolov8n-pose.pt</code> နှင့် <code>yolov8s-pose.pt</code> Model များသည် လူတစ်ယောက်၏ ခန္ဓာကိုယ် Skeleton Keypoints (၁၇) ခု (မျက်လုံး၊ နား၊ ပခုံး၊ တံတောင်၊ လက်ကောက်ဝတ်၊ တင်ပါး၊ ဒူးခေါင်း၊ ခြေကျင်းဝတ်) ကို Real-time တိုင်းတာပေးပါသည်။
+  </p>
+
+  <div class="highlight-box teal">
+    <strong>Fall Detection Vector Formula (လဲကျခြင်း တွက်ချက်မှု သင်္ချာညီမျှခြင်း):</strong><br>
+    လူတစ်ယောက်၏ ကျောရိုး (Spine Angle Vector) horizontal အပြင်အဆင်နှင့် လဲကျမှုကို တွက်ချက်ရန် ပခုံးလယ်မှတ် (Mid-Shoulder: S) နှင့် တင်ပါးလယ်မှတ် (Mid-Hip: H) တို့၏ Vector Delta ကို ယူပါသည်:<br>
+    <code>dx = MidHip_x - MidShoulder_x, dy = MidHip_y - MidShoulder_y</code><br>
+    <code>Spine Angle (θ) = | arctan2(dy, dx) * 180 / π |</code><br>
+    <code>Fall Trigger Condition: (θ < 30° OR dy < 15px) AND (Bounding Box Width > 1.25 * Height)</code>
+  </div>
+
+  <h3>၂.၂ Face Recognition Pipeline (SCRFD + MiniFASNetV2 + ArcFace)</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Model Name</th>
+        <th>Framework / Format</th>
+        <th>Input Dimension</th>
+        <th>Primary Objective & Technical Function</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>SCRFD-2.5G</strong></td>
+        <td>ONNX (CUDA Provider)</td>
+        <td>Dynamic Multi-scale</td>
+        <td>Ultra-fast Multi-face detection နှင့် မျက်လုံး၊ နှာခေါင်း၊ နှုတ်ခမ်းထောင့် Landmark Keypoint (၅) ခု ရှာဖွေပေးခြင်း။</td>
+      </tr>
+      <tr>
+        <td><strong>MiniFASNetV2</strong></td>
+        <td>ONNX (Anti-Spoofing)</td>
+        <td>80 × 80 × 3 (RGB)</td>
+        <td>2.5D Fourier Depth Spectrum Evaluation ဖြင့် 2D ဓာတ်ပုံ၊ ဖုန်းစခရင်ဗီဒီယို ပြသကျူးကျော်မှုများကို ငြင်းပယ်ခြင်း (Threshold Score &ge; 0.85)။</td>
+      </tr>
+      <tr>
+        <td><strong>ArcFace IR-50</strong></td>
+        <td>ONNX (ResNet-50)</td>
+        <td>112 × 112 × 3 (Aligned)</td>
+        <td>Affine Transformed မျက်နှာပုံရိပ်မှ Normalized <strong>512-Dimensional Feature Vector</strong> ကို ထုတ်ယူပေးခြင်း။</td>
+      </tr>
+      <tr>
+        <td><strong>FAISS Engine</strong></td>
+        <td>C++ / PyFAISS Index</td>
+        <td>512-D Matrix</td>
+        <td>Target Face Profile ၁,၀၀၀ ကျော်အား Normalized Cosine Similarity ဖြင့် Millisecond အတွင်း တိုက်ဆိုင်စစ်ဆေးပေးခြင်း။</td>
+      </tr>
+      <tr>
+        <td><strong>Gemini 3.6 Flash</strong></td>
+        <td>REST API Multimodal</td>
+        <td>Image + Text Tokens</td>
+        <td>ကျူးကျော်မှု အခြေအနေများကို စာသားဖြင့် သုံးသပ်ပေးခြင်းနှင့် Telegram Bot Remote Security Assistant အဖြစ် ဆောင်ရွက်ခြင်း။</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>၂.၃ FAISS Vector Similarity & Metric Thresholds</h3>
+  <p>
+    ArcFace မှ ထုတ်ယူရရှိသော Feature Vector (u) နှင့် Target Database မှ Vector (v) တို့၏ Cosine Similarity ကို အောက်ပါအတိုင်း တွက်ချက်ပါသည်:
+  </p>
+  <div class="code-block">
+<span class="code-comment"># Cosine Similarity Vector Matching Matrix</span>
+<span class="code-keyword">def</span> <span class="code-function">compute_cosine_similarity</span>(embedding_u, embedding_v):
+    norm_u = np.linalg.norm(embedding_u)
+    norm_v = np.linalg.norm(embedding_v)
+    sim = np.dot(embedding_u, embedding_v) / (norm_u * norm_v)
+    <span class="code-keyword">return</span> float(sim) <span class="code-comment"># Threshold >= 0.40 to Trigger Verified Identity Match</span>
+  </div>
+</div>
+
+<!-- PAGE 3: SOFTWARE ARCHITECTURE & TELEGRAM DISPATCHER -->
+<div class="page">
+  <div class="running-header">
+    <span>SHADOW EYE (S-EYE) PLATFORM TECHNICAL SPECIFICATION</span>
+    <span>SECTION 3: DISPATCHER, SECURITY & INFRASTRUCTURE</span>
+  </div>
+
+  <div class="section-header">
+    <div class="section-number">3</div>
+    <h2>Alert Dispatcher Engine, Security Guardrails & Infrastructure</h2>
+  </div>
+
+  <h3>၃.၁ Automated Alert Dispatcher & Telegram Bot Protocols</h3>
+  <p>
+    Threat Event (Human Detection / Fall Detection / Target Match) ဖြစ်ပွားပါက System Frame Buffer မှ JPEG Snapshot Encoded Bytes ကို ရယူ၍ Telegram Bot API သို့ မဆိုင်းမတွ သတိပေးချက် အလိုအလျောက် ပေးပို့ပါသည်။
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-blue">BOT-03</span> Multi-Target Alert Routing
+      </div>
+      <p style="font-size: 11.5px; margin: 0;">
+        Alert မက်ဆေ့ချ်များကို Camera Custom Chat ID, Tactical Operative Direct Messages သို့မဟုတ် Headquarters Group Chat (<code>-100...</code>) များထံ Dynamic Route လုပ်ပေးပါသည်။
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-orange">BOT-05</span> 30-Second Alert Cooldown Manager
+      </div>
+      <p style="font-size: 11.5px; margin: 0;">
+        Telegram Chat Spam ဖြစ်ခြင်းမှ ကာကွယ်ရန် သတ်မှတ် စက္ကန့် (၃၀) အတွင်း ကင်မရာ တစ်ခုတည်းမှ ထပ်ခါထပ်ခါ Trigger ဖြစ်လာသော Alert များကို အလိုအလျောက် Rate Limit လုပ်ပေးပါသည်။
+      </p>
+    </div>
+  </div>
+
+  <h3>၃.၂ Telegram Snapshot Alert Format Example</h3>
+  <div class="code-block">
+🚨 <b>S-Eye AI Security Alert</b>
+
+📹 <b>Camera Channel:</b> Front Gate CCTV (RTSP)
+🎯 <b>Detection Event:</b> TARGET MATCHED (MG MG - VIP)
+🧠 <b>AI Scan Engine:</b> SCRFD-2.5G + ArcFace IR-50
+📊 <b>Confidence Score:</b> 89.4% Match
+📢 <b>Target Destination:</b> <code>-1001928471029</code>
+⏰ <b>Timestamp:</b> 2026-08-13 04:37:49
+
+<i>S-Eye Intelligent Tactical Surveillance Platform</i>
+  </div>
+
+  <h3>၃.၃ AI Security Policy & Shield Guardrails</h3>
+  <div class="highlight-box warning">
+    <strong>AI Protection Shield Protocols:</strong><br>
+    • <strong>Anti-Prompt Injection Filter:</strong> Gemini AI သို့ ဝင်လာသော Operator Prompt များတွင် Jailbreak Vectors (DAN, Prompt Override) ပါဝင်ပါက အလိုအလျောက် ပိတ်ဆို့ပါသည်။<br>
+    • <strong>Credential Theft Prevention:</strong> System `.env` အတွင်းရှိ <code>TELEGRAM_BOT_TOKEN</code>, <code>GEMINI_API_KEY</code>, Database Secret Passwords များကို Telegram Chat သို့ အပြင်ထွက်မသွားစေရန် Guardrail Shield မှ စစ်ဆေးဖြတ်တောက်ပါသည်။<br>
+    • <strong>Privilege Access Control:</strong> Admin Privilege မရှိသော Telegram Chat Session များမှ Database Mutation မိန့်ခွန်းများ စေခိုင်းခြင်းကို ပယ်ဖျက်ပါသည်။
+  </div>
+
+  <h3>၃.၄ Hardware Matrix & Technical Specifications</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Minimum Requirements</th>
+        <th>Recommended Operational Setup</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Graphics Processor (GPU)</strong></td>
+        <td>NVIDIA GTX 1050 Ti (4GB VRAM)</td>
+        <td>NVIDIA GTX 1650 / RTX 3060+ (ONNX CUDA)</td>
+      </tr>
+      <tr>
+        <td><strong>Central Processor (CPU)</strong></td>
+        <td>Intel Core i5 / AMD Ryzen 5 (4 Cores)</td>
+        <td>Intel Core i7 / AMD Ryzen 7 (8 Cores+)</td>
+      </tr>
+      <tr>
+        <td><strong>System Memory (RAM)</strong></td>
+        <td>8 GB DDR4</td>
+        <td>16 GB / 32 GB DDR4/DDR5</td>
+      </tr>
+      <tr>
+        <td><strong>Storage Space</strong></td>
+        <td>10 GB SSD Storage</td>
+        <td>512 GB NVMe SSD (Frame Storage)</td>
+      </tr>
+      <tr>
+        <td><strong>Operating System</strong></td>
+        <td>Windows 10 / 11 (64-bit), Ubuntu 22.04 LTS</td>
+        <td>Windows 11 / Enterprise Linux</td>
+      </tr>
+      <tr>
+        <td><strong>Runtime Framework</strong></td>
+        <td>Python 3.11+, UV Package Manager, CUDA 12.1+</td>
+        <td>ONNX Runtime GPU 1.19+, PyTorch 2.5+ CUDA</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 12px; font-size: 11px; color: #64748b; text-align: center;">
+    Official Software Architecture & Model Specification Report for Shadow Eye (S-Eye) Platform • Confidential
+  </div>
+</div>
+
+</body>
+</html>

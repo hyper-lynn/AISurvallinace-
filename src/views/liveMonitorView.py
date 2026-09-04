@@ -13,6 +13,18 @@ from config.fonts import AppFonts
 
 from views.components.cameraAlertDialog import show_camera_alert_dispatch_dialog
 
+def show_bot_qr_dialog(page: ft.Page):
+    dlg = ft.AlertDialog(
+        title=ft.Text("Telegram Bot QR Code", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_400),
+        content=ft.Column([
+            ft.Text("Scan this QR code with Telegram to connect to the @SITE_Alert_101_bot.", size=11, text_align=ft.TextAlign.CENTER),
+            ft.Image(src="telegram_bot_qr.png", width=250, height=250, fit=ft.BoxFit.CONTAIN, border_radius=8)
+        ], tight=True, alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+        actions=[ft.TextButton("CLOSE", on_click=lambda _: page.pop_dialog())],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+    page.show_dialog(dlg)
+
 @ft.component
 def SingleCameraTile(
     cam_info: dict,
@@ -38,7 +50,9 @@ def SingleCameraTile(
     frame_b64, set_frame_b64 = ft.use_state(initial_b64)
     is_loading, set_is_loading = ft.use_state(True)
     camera_service = ft.use_memo(lambda: CameraService(), [])
-    ai_enabled, set_ai_enabled = ft.use_state(bool(cam_info.get("human_detection", 0)))
+    ai_enabled, set_ai_enabled = ft.use_state(bool(cam_info.get("human_detection", 1)))
+    face_enabled, set_face_enabled = ft.use_state(False)
+    crowd_mode, set_crowd_mode = ft.use_state(False)
     alarm_enabled, set_alarm_enabled = ft.use_state(bool(cam_info.get("telegram_alert_enabled", 0)))
 
     def handle_toggle_ai(e=None):
@@ -57,6 +71,29 @@ def SingleCameraTile(
                 telegram_chat_id=cam_info.get("telegram_chat_id", ""),
                 telegram_alert_enabled=1 if alarm_enabled else 0
             )
+
+    def handle_toggle_face(e=None):
+        new_face = not face_enabled
+        set_face_enabled(new_face)
+        if new_face:
+            # Face Detection ON → disable human (AI) detection and motion detection
+            set_ai_enabled(False)
+            if cam_info.get("id"):
+                camera_service.update_camera(
+                    camera_id=cam_info["id"],
+                    name=cam_info.get("name", "Camera"),
+                    device_type=cam_info.get("device_type", "webcam"),
+                    source=cam_source,
+                    camera_group=cam_info.get("camera_group", "Zone-01"),
+                    detection_model=cam_info.get("detection_model", "yolov8n"),
+                    motion_detection=0,
+                    human_detection=0,
+                    telegram_chat_id=cam_info.get("telegram_chat_id", ""),
+                    telegram_alert_enabled=1 if alarm_enabled else 0
+                )
+
+    def handle_toggle_crowd(e=None):
+        set_crowd_mode(not crowd_mode)
 
     def handle_toggle_alarm(e=None):
         new_val = not alarm_enabled
@@ -82,44 +119,59 @@ def SingleCameraTile(
         page = None
 
     def setup_tile():
+        mounted = {"active": True}
         set_is_loading(True)
         set_frame_b64(cam_controller._generate_synthetic_frame(0))
         
         def on_frame(b64: str):
-            set_frame_b64(b64)
-            set_is_loading(False)
+            if mounted["active"]:
+                set_frame_b64(b64)
+                set_is_loading(False)
         cam_controller.start(on_frame)
-        return lambda: cam_controller.stop()
+        def cleanup():
+            mounted["active"] = False
+            cam_controller.stop()
+        return cleanup
 
-    ft.use_effect(setup_tile, [cam_source])
+    ft.use_effect(setup_tile, [cam_source, cam_info.get("id")])
 
     # Sync HUD overlay setting with CameraController
     cam_controller.hud_enabled = hud_enabled
     
-    # Sync AI Detection and Alert Callback
+    # Sync AI Detection, Face Detection, Crowd Mode, and Alert Callback
     cam_controller.ai_detection_enabled = ai_enabled
+    cam_controller.face_detection_enabled = face_enabled
+    cam_controller.crowd_mode_enabled = crowd_mode
     
-    def on_human_detected(source: str, b64_frame: str, event_type: str = "HUMAN DETECTED"):
+    def on_human_detected(source: str, b64_frame: str, event_type: str = "HUMAN DETECTED", person_name: Optional[str] = None):
         if not alarm_enabled:
             return
         try:
             import base64
             telegram_service = TelegramService()
             photo_bytes = base64.b64decode(b64_frame) if isinstance(b64_frame, str) else b64_frame
+
+            # Face detection model label override
+            model_label = "OpenCV Haar Cascade" if "FACE" in event_type else "YOLOv8 + ArcFace 2.5D"
+
             telegram_service.send_camera_alert(
                 camera=cam_info,
                 photo_source=photo_bytes,
                 detection_type=event_type,
                 confidence=0.92,
-                model_used="YOLOv8n-pose"
+                model_used=model_label,
+                person_name=person_name
             )
             # Show a snackbar on UI as well using captured page reference
             if page:
                 try:
+                    display_msg = f"🚨 {event_type} ({person_name}) on {cam_name}!" if person_name else f"🚨 {event_type} on {cam_name}!"
                     page.show_dialog(
                         ft.SnackBar(
-                            content=ft.Text(f"🚨 AI {event_type} on {cam_name}! Telegram Alert Dispatched.", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
-                            bgcolor=ft.Colors.RED_800 if "FALL" in event_type else ft.Colors.AMBER_900
+                            content=ft.Text(f"{display_msg} Telegram Alert Dispatched.", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                            bgcolor=ft.Colors.PURPLE_800 if "FACE" in event_type else (
+                                ft.Colors.RED_800 if "FALL" in event_type else ft.Colors.AMBER_900
+                            )
                         )
                     )
                 except Exception:
@@ -129,6 +181,8 @@ def SingleCameraTile(
 
     cam_controller.on_human_detected_callback = on_human_detected
     cam_controller.on_fall_detected_callback = lambda src, b64: on_human_detected(src, b64, "FALL DETECTED")
+
+
 
     img_control = ft.Image(
         key=f"tile_{cam_info.get('id', 1)}_{cam_source}",
@@ -183,6 +237,22 @@ def SingleCameraTile(
             # Top-Left HUD Overlay Badge (if HUD enabled)
             hud_overlay_layer,
 
+            # Top-Center: Face Detection mode status badge (generic, no individual name)
+            ft.Container(
+                alignment=ft.Alignment(0, -0.92),
+                content=ft.Container(
+                    padding=ft.Padding(8, 4, 10, 4),
+                    bgcolor=ft.Colors.with_opacity(0.85, ft.Colors.PURPLE_900),
+                    border_radius=14,
+                    border=ft.Border.all(1.5, ft.Colors.PURPLE_400),
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.FACE_5, size=15, color=ft.Colors.PURPLE_300),
+                        ft.Text("FACE DETECT: ON", size=10, color=ft.Colors.PURPLE_100, weight=ft.FontWeight.BOLD)
+                    ], spacing=5, tight=True)
+                )
+            ) if face_enabled else ft.Container(),
+
+
             # Top-Right Layer: Webcam Name Badge (without extra SELECTED tag as requested)
             ft.Container(
                 alignment=ft.Alignment(0.96, -0.92),
@@ -221,8 +291,24 @@ def SingleCameraTile(
                         icon=ft.Icons.PERSON_SEARCH_ROUNDED,
                         icon_color=ft.Colors.GREEN_400 if ai_enabled else ft.Colors.WHITE_54,
                         icon_size=18,
-                        tooltip="Turn AI Detection " + ("OFF" if ai_enabled else "ON"),
+                        tooltip="Turn AI Human Pose Detection " + ("OFF" if ai_enabled else "ON"),
                         on_click=handle_toggle_ai
+                    ),
+                    # 1b. Toggle Dedicated Face Detection
+                    ft.IconButton(
+                        icon=ft.Icons.FACE_5,
+                        icon_color=ft.Colors.PURPLE_300 if face_enabled else ft.Colors.WHITE_54,
+                        icon_size=18,
+                        tooltip="Turn Face Detection " + ("OFF" if face_enabled else "ON"),
+                        on_click=handle_toggle_face
+                    ),
+                    # 1c. Toggle Crowd / High-Density Mode
+                    ft.IconButton(
+                        icon=ft.Icons.GROUPS_ROUNDED,
+                        icon_color=ft.Colors.ORANGE_400 if crowd_mode else ft.Colors.WHITE_54,
+                        icon_size=18,
+                        tooltip="Crowd Scanning Mode: " + ("ACTIVE (Low Conf + High Resolution)" if crowd_mode else "OFF (Standard Mode)"),
+                        on_click=handle_toggle_crowd
                     ),
                     # 2. Toggle Alarm Mode (Auto Telegram Alert on Detection)
                     ft.IconButton(
@@ -265,9 +351,6 @@ def liveMonitorView():
 
     safe_cameras = db_cameras if (db_cameras and len(db_cameras) > 0) else [
         {"id": 1, "name": "Default PC Webcam", "device_type": "webcam", "source": "0", "camera_group": "Zone-01", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
-        {"id": 2, "name": "Wireless CCTV - Sector 7G", "device_type": "rtsp_wireless", "source": "rtsp://192.168.1.100:554/stream1", "camera_group": "Zone-01", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
-        {"id": 3, "name": "Wired CCTV - Main Gate", "device_type": "rtsp_wired", "source": "rtsp://192.168.1.101:554/stream1", "camera_group": "Zone-02", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
-        {"id": 4, "name": "Perimeter Guard Post", "device_type": "rtsp_wired", "source": "rtsp://192.168.1.102:554/stream1", "camera_group": "Zone-02", "human_detection": 0, "motion_detection": 0, "telegram_alert_enabled": 0},
     ]
 
     # Zone Filter Selection State
@@ -444,8 +527,20 @@ def liveMonitorView():
                 set_tg_refresh_key(tg_refresh_key + 1)
 
     def handle_focus_camera(cam: dict):
+        """Enter single-camera focus view and immediately stop all other RTSP streams."""
         set_focused_cam(cam)
         set_view_mode("single")
+        # Stop all active camera streams EXCEPT the focused one to save network bandwidth
+        focused_source = str(cam.get("source", ""))
+        try:
+            from controllers.camera_controller import CameraController
+            CameraController.stop_all_except(focused_source)
+        except Exception:
+            pass
+
+    def handle_return_to_quad(e=None):
+        """Return to quad grid view — stopped cameras will auto-reconnect via their setup_tile effect."""
+        set_view_mode("quad")
 
     # Dynamic Layout Responsive Heights
     single_view_height = 420 if page_width > 1100 else 320 if page_width > 700 else 220
@@ -456,6 +551,13 @@ def liveMonitorView():
     end_idx = min(len(active_display_cams), start_idx + cams_per_page)
     current_page_cams = active_display_cams[start_idx:end_idx]
 
+    def handle_change_zone(zone_val: str):
+        set_selected_zone(zone_val)
+        set_page_index(0)
+        cams_in_zone = [c for c in safe_cameras if zone_val == "ALL ZONES" or c.get("camera_group") == zone_val]
+        if cams_in_zone:
+            set_focused_cam(cams_in_zone[0])
+
     # Zone Filter Selector Control Bar
     zone_selector_bar = ft.Container(
         content=ft.Row([
@@ -464,7 +566,7 @@ def liveMonitorView():
             ft.Dropdown(
                 value=selected_zone,
                 options=[ft.dropdown.Option(z, z) for z in available_zones],
-                on_select=lambda e: (set_selected_zone(e.control.value), set_page_index(0)),
+                on_select=lambda e: handle_change_zone(e.control.value),
                 width=240,
                 dense=True,
                 text_style=ft.TextStyle(size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_100),
@@ -524,15 +626,20 @@ def liveMonitorView():
 
     # 1. Main Live Video Feed Container (4-View Matrix vs Single Focus View)
     if view_mode == "single":
-        video_display_area = SingleCameraTile(
-            cam_info=focused_cam,
-            height=single_view_height,
-            on_focus=lambda: set_view_mode("quad"),
-            is_focused=True,
-            hud_enabled=hud_overlay_active,
-            is_selected=focused_cam["id"] in selected_cam_ids,
-            on_select_toggle=lambda fid=focused_cam["id"]: handle_toggle_cam_selection(fid),
-            on_dispatch_alert=lambda cam_info=focused_cam, b64="": handle_dispatch_single_cam_alert(cam_info, b64)
+        active_focus = focused_cam if any(c["id"] == focused_cam.get("id") for c in active_display_cams) else active_display_cams[0]
+        video_display_area = ft.Container(
+            key=f"single_view_area_{active_focus['id']}_{selected_zone}",
+            content=SingleCameraTile(
+                key=f"single_tile_{active_focus['id']}_{active_focus['source']}",
+                cam_info=active_focus,
+                height=single_view_height,
+                on_focus=handle_return_to_quad,
+                is_focused=True,
+                hud_enabled=hud_overlay_active,
+                is_selected=active_focus["id"] in selected_cam_ids,
+                on_select_toggle=lambda fid=active_focus["id"]: handle_toggle_cam_selection(fid),
+                on_dispatch_alert=lambda cam_info=active_focus, b64="": handle_dispatch_single_cam_alert(cam_info, b64)
+            )
         )
     else:
         # 4-View Grid Matrix (2x2 Layout per Page)
@@ -540,9 +647,10 @@ def liveMonitorView():
         for c in current_page_cams:
             grid_tiles.append(
                 ft.Container(
-                    key=f"grid_tile_{c['id']}_{page_index}_{c['source']}",
+                    key=f"grid_tile_{c['id']}_{selected_zone}_{page_index}",
                     col={"xs": 12, "md": 6},
                     content=SingleCameraTile(
+                        key=f"tile_{c['id']}_{c['source']}",
                         cam_info=c,
                         height=grid_tile_height,
                         on_focus=lambda target_cam=c: handle_focus_camera(target_cam),
@@ -554,7 +662,10 @@ def liveMonitorView():
                     )
                 )
             )
-        video_display_area = ft.ResponsiveRow(controls=grid_tiles, spacing=10)
+        video_display_area = ft.Container(
+            key=f"quad_grid_area_{selected_zone}_{page_index}",
+            content=ft.ResponsiveRow(controls=grid_tiles, spacing=10)
+        )
 
     video_feed_card = ft.Container(
         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
@@ -577,8 +688,26 @@ def liveMonitorView():
                             ft.Text("4-VIEW QUAD MATRIX" if view_mode == "quad" else f"SINGLE VIEW - {focused_cam['name'].upper()}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
                         ], spacing=2),
                         
-                        # Top Action Toolbar (HUD Overlay Toggle, View Mode Selector, REC & Camera Selection Layout)
+                        # Top Action Toolbar (Camera Selector Dropdown, HUD Overlay Toggle, View Mode Selector)
                         ft.Row([
+                            ft.Dropdown(
+                                value=str(focused_cam.get("id", "")),
+                                label="🎥 SELECT CAMERA / SN STREAM",
+                                hint_text="Switch camera stream...",
+                                dense=True,
+                                text_size=11,
+                                width=260,
+                                options=[
+                                    ft.dropdown.Option(
+                                        str(c["id"]),
+                                        f"[{c.get('camera_group', 'Zone')}] {c['name']}"
+                                    ) for c in safe_cameras
+                                ],
+                                on_select=lambda e: next(
+                                    (handle_focus_camera(c) for c in safe_cameras if str(c["id"]) == e.control.value),
+                                    None
+                                )
+                            ),
                             ft.Button(
                                 "HUD OVERLAY: ON" if hud_overlay_active else "HUD OVERLAY: OFF",
                                 icon=ft.Icons.GRID_ON_ROUNDED if hud_overlay_active else ft.Icons.GRID_OFF_ROUNDED,
@@ -603,14 +732,14 @@ def liveMonitorView():
                                         icon_size=18,
                                         icon_color=ft.Colors.CYAN_400 if view_mode == "quad" else ft.Colors.GREY_500,
                                         tooltip="4-View Quad Grid Matrix",
-                                        on_click=lambda _: set_view_mode("quad")
+                                        on_click=handle_return_to_quad
                                     ),
                                     ft.IconButton(
                                         icon=ft.Icons.ASPECT_RATIO_ROUNDED,
                                         icon_size=18,
                                         icon_color=ft.Colors.CYAN_400 if view_mode == "single" else ft.Colors.GREY_500,
                                         tooltip="Single Camera Focused View",
-                                        on_click=lambda _: set_view_mode("single")
+                                        on_click=lambda _: handle_focus_camera(focused_cam)
                                     )
                                 ], spacing=2)
                             ),
@@ -846,6 +975,13 @@ def liveMonitorView():
                     ft.Icon(ft.Icons.MARK_CHAT_UNREAD_ROUNDED, color=ft.Colors.CYAN_400, size=18),
                     ft.Text("TELEGRAM ALERT RECIPIENTS", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE),
                     ft.Container(expand=True),
+                    ft.IconButton(
+                        icon=ft.Icons.QR_CODE_ROUNDED,
+                        icon_size=16,
+                        icon_color=ft.Colors.CYAN_400,
+                        tooltip="Show Telegram Bot QR Code",
+                        on_click=lambda e: show_bot_qr_dialog(page)
+                    ),
                     ft.Container(
                         padding=ft.Padding(6, 2, 6, 2),
                         bgcolor=ft.Colors.CYAN_900,

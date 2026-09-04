@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Versioninfo>
+	<Module name="DssBaseLib" path="/BASPlatform/DSSModule/DssBaseLib/Branches/P_2014.09.23_DssBaseLib_Stable1.3.X" version="1670939">
+		<External name="openssl" path="^/DSSModule/Bin/3rdParty/openssl" version="1462730"/>
+	</Module>
+</Versioninfo>

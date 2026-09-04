@@ -82,71 +82,27 @@ class CameraService:
                         cursor.execute(f"ALTER TABLE camera_devices ADD COLUMN {col_name} {col_def}")
                 conn.commit()
 
-                # Seed default cameras if empty
+                # Seed default PC webcam if empty
                 cursor.execute("SELECT COUNT(*) as count FROM camera_devices")
                 count = cursor.fetchone()["count"]
                 if count == 0:
-                    cursor.executemany("""
+                    cursor.execute("""
                         INSERT INTO camera_devices (name, device_type, source, camera_group, detection_model, motion_detection, human_detection, telegram_chat_id, telegram_alert_enabled)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, [
-                        ("Updated PC Cam", "webcam", "0", "DEPT: SURV-01", "yolov8n", 0, 0, "", 0),
-                        ("Home - Zone 01", "rtsp_wired", "192.168.100.93:554/cam/main", "Zone-01", "yolov8n", 0, 0, "", 0),
-                        ("Dahua P2P Cloud (Secure)", "p2p_dahua", "SN: AE44-99X2", "Zone-02", "yolov8n", 0, 0, "", 0),
-                    ])
+                    """, ("Default PC Webcam", "webcam", "0", "Zone-01", "yolov8n", 0, 0, "", 0))
                     conn.commit()
-                    logger.info("Default CCTV camera sources seeded into SQLite database.")
+                    logger.info("Default PC Webcam seeded into SQLite database.")
         except Exception as e:
             logger.error(f"Error initializing camera_devices table: {e}")
 
-    def _sync_env_cameras(self) -> None:
-        """Check .env for DAHUA_P2P_SN and auto-insert into SQLite DB if missing"""
-        try:
-            sn = ""
-            env_path = os.path.abspath(".env")
-            if os.path.exists(env_path):
-                with open(env_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if "=" in line and not line.strip().startswith("#"):
-                            k, v = line.split("=", 1)
-                            if k.strip() == "DAHUA_P2P_SN":
-                                sn = v.strip().strip('"').strip("'")
-                                break
-            if sn:
-                sn_source = f"SN:{sn}"
-                with self._get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT COUNT(*) as count FROM camera_devices WHERE source LIKE ?", (f"%{sn}%",))
-                    exists = cursor.fetchone()["count"]
-                    if exists == 0:
-                        cursor.execute("""
-                            INSERT INTO camera_devices (name, device_type, source, camera_group, detection_model, motion_detection, human_detection, telegram_chat_id, telegram_alert_enabled)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (f"Dahua P2P Cloud ({sn})", "p2p_dahua", sn_source, "Zone-02", "yolov8n", 0, 0, "", 0))
-                        conn.commit()
-                        logger.info(f"Auto-synced Dahua P2P SN '{sn}' from .env into SQLite camera_devices.")
-        except Exception as e:
-            logger.error(f"Error syncing .env camera sources: {e}")
-
     def get_cameras(self) -> List[Dict]:
         """Fetch all camera sources with full profile settings and camera_group"""
-        self._sync_env_cameras()
         default_list = [
             {
-                "id": 1, "name": "Updated PC Cam", "device_type": "webcam", "source": "0", "camera_group": "DEPT: SURV-01",
+                "id": 1, "name": "Default PC Webcam", "device_type": "webcam", "source": "0", "camera_group": "Zone-01",
                 "detection_model": "yolov8n", "motion_detection": 0, "human_detection": 0,
                 "telegram_chat_id": "", "telegram_alert_enabled": 0
-            },
-            {
-                "id": 2, "name": "Home - Zone 01", "device_type": "rtsp_wired", "source": "192.168.100.93:554/cam/main", "camera_group": "Zone-01",
-                "detection_model": "yolov8n", "motion_detection": 0, "human_detection": 0,
-                "telegram_chat_id": "", "telegram_alert_enabled": 0
-            },
-            {
-                "id": 3, "name": "Dahua P2P Cloud (Secure)", "device_type": "p2p_dahua", "source": "SN: AE44-99X2", "camera_group": "Zone-02",
-                "detection_model": "yolov8n", "motion_detection": 0, "human_detection": 0,
-                "telegram_chat_id": "", "telegram_alert_enabled": 0
-            },
+            }
         ]
         try:
             with self._get_connection() as conn:
@@ -219,6 +175,19 @@ class CameraService:
             logger.error(f"Error deleting camera source: {e}")
             return False
 
+    def delete_all_cameras(self) -> bool:
+        """Purge all camera devices from SQLite DB"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM camera_devices")
+                conn.commit()
+                logger.info("Purged all camera devices from registry.")
+                return True
+        except Exception as e:
+            logger.error(f"Error purging all cameras: {e}")
+            return False
+
     def update_camera(
         self,
         camera_id: int,
@@ -282,37 +251,88 @@ class CameraService:
 
     def import_all_dahua_channels(
         self,
-        ip: str = "192.168.100.93",
+        ip: Optional[str] = None,
         port: int = 554,
-        user: str = "admin",
-        password: str = "12345asd@",
-        channel_count: int = 16
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        channel_count: int = 16,
+        overwrite: bool = True
     ) -> int:
         """
-        Seed/Import all 16 Dahua channels into the camera database automatically.
+        Seed/Import/Update all Dahua NVR channels into the camera database automatically.
         """
+        target_ip = ip if ip else os.getenv("DAHUA_IP", "").strip()
+        target_user = user if user else os.getenv("DAHUA_USER", "admin")
+        target_pass = password if password else os.getenv("DAHUA_PASS", "")
+
+        if not target_ip:
+            logger.info("DAHUA_IP is not configured. Skipping automatic channel import.")
+            return 0
+
         import urllib.parse
-        encoded_pass = urllib.parse.quote(password, safe="")
+        encoded_pass = urllib.parse.quote(target_pass, safe="")
         inserted_count = 0
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 for ch in range(1, channel_count + 1):
-                    # Group into zones (e.g. Ch 1-4: Zone-01, Ch 5-8: Zone-02, Ch 9-12: Zone-03, Ch 13-16: Zone-04)
                     zone_num = ((ch - 1) // 4) + 1
                     zone_name = f"Zone-0{zone_num}"
                     cam_name = f"Dahua NVR - CH{ch:02d} ({zone_name})"
-                    rtsp_source = f"rtsp://{user}:{encoded_pass}@{ip}:{port}/cam/realmonitor?channel={ch}&subtype=0"
+                    rtsp_source = f"rtsp://{target_user}:{encoded_pass}@{target_ip}:{port}/cam/realmonitor?channel={ch}&subtype=0"
 
-                    cursor.execute("SELECT COUNT(*) as count FROM camera_devices WHERE source = ?", (rtsp_source,))
-                    if cursor.fetchone()["count"] == 0:
+                    cursor.execute("SELECT id FROM camera_devices WHERE name LIKE ?", (f"%CH{ch:02d}%",))
+                    existing = cursor.fetchone()
+                    if existing and overwrite:
+                        cursor.execute("""
+                            UPDATE camera_devices SET source = ?, camera_group = ?, device_type = 'rtsp_wired'
+                            WHERE id = ?
+                        """, (rtsp_source, zone_name, existing["id"]))
+                        inserted_count += 1
+                    elif not existing:
                         cursor.execute("""
                             INSERT INTO camera_devices (name, device_type, source, camera_group, detection_model, motion_detection, human_detection, telegram_chat_id, telegram_alert_enabled)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, (cam_name, "rtsp_wired", rtsp_source, zone_name, "yolov8n", 0, 0, "", 0))
                         inserted_count += 1
                 conn.commit()
-                logger.info(f"Imported {inserted_count} Dahua NVR channels into database.")
+                logger.info(f"Imported/Updated {inserted_count} Dahua NVR channels (IP: {target_ip}) into database.")
         except Exception as e:
             logger.error(f"Error importing Dahua channels: {e}")
         return inserted_count
+
+    def import_sn_devices(self, devices: List[Dict[str, str]]) -> int:
+        """
+        Bulk import/organize camera Serial Numbers (SN) into SQLite database.
+        Each item in `devices` can contain:
+          - "name": e.g. "IMOU Ranger 2 (Front Yard)"
+          - "sn": e.g. "8M0435CPAZ0E327"
+          - "group": e.g. "IMOU Wireless" or "Wired Channel"
+          - "device_type": e.g. "p2p_dahua" (default)
+        """
+        inserted_count = 0
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                for dev in devices:
+                    sn = str(dev.get("sn", "")).strip()
+                    if not sn:
+                        continue
+                    sn_source = f"SN:{sn}" if not sn.startswith("SN:") and not sn.startswith("p2p://") else sn
+                    name = dev.get("name", f"Camera ({sn})").strip()
+                    group = dev.get("group", "Zone-01").strip()
+                    device_type = dev.get("device_type", "p2p_dahua").strip()
+
+                    cursor.execute("SELECT COUNT(*) as count FROM camera_devices WHERE source LIKE ?", (f"%{sn}%",))
+                    if cursor.fetchone()["count"] == 0:
+                        cursor.execute("""
+                            INSERT INTO camera_devices (name, device_type, source, camera_group, detection_model, motion_detection, human_detection, telegram_chat_id, telegram_alert_enabled)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (name, device_type, sn_source, group, "yolov8n", 0, 0, "", 0))
+                        inserted_count += 1
+                conn.commit()
+                logger.info(f"Imported {inserted_count} SN camera devices into database.")
+        except Exception as e:
+            logger.error(f"Error importing SN devices: {e}")
+        return inserted_count
+

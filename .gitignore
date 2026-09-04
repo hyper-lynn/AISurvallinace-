@@ -161,3 +161,9 @@ cython_debug/
 
 # Flet
 storage/
+
+# Large files and models
+*.pdb
+*.ipch
+*.onnx
+*.pt

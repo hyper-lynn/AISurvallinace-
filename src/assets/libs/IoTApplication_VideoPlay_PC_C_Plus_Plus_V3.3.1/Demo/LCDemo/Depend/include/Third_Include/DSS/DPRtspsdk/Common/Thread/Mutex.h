@@ -1,0 +1,35 @@
+#ifdef DP_REST_PLATFORM_SDK
+
+#ifndef __COMMON_MUTEX_H__
+#define __COMMON_MUTEX_H__
+
+#include "libdsl/DMutex.h"
+
+namespace Common
+{
+    //////////////////////////////////////////////////////////////////////////
+    //独占锁
+    //typedef dsl::DMutex DSMutex;                            // 独占锁
+#define DSMutex dsl::DMutex
+    //typedef dsl::DMutexGuard DSMutexLock;    // 独占锁Lock
+#define DSMutexLock dsl::DMutexGuard
+/*
+    //////////////////////////////////////////////////////////////////////////
+    //递归锁
+    typedef boost::recursive_mutex DSRecursiveMutex;                   // 递归锁(不建议使用，建议使用DSMutex)
+    typedef boost::recursive_mutex::scoped_lock DSRecursiveMutexLock;  // 递归锁Lock
+
+    //////////////////////////////////////////////////////////////////////////
+    //读写锁
+    // 读写锁共享互斥量（会创建句柄，不建议大量对象使用，建议使用独占锁DSMutex）
+    typedef boost::shared_mutex DSRWMutex; 
+    // 读锁
+    typedef boost::shared_lock<DSRWMutex> DSReadLock; 
+    // 写锁
+    typedef boost::unique_lock <DSRWMutex> DSWriteLock; 
+ */
+}
+
+#endif // __COMMON_MUTEX_H__
+
+#endif

@@ -1,0 +1,72 @@
+flowchart TD
+    subgraph Input_Layer ["1. Camera & Video Stream Input"]
+        C1["RTSP / IP Camera 1"]
+        C2["RTSP / IP Camera 2"]
+        C3["RTSP / IP Camera N"]
+        FrameExtractor["Live Video Stream Reader / Frame Extractor"]
+        
+        C1 --> FrameExtractor
+        C2 --> FrameExtractor
+        C3 --> FrameExtractor
+    end
+
+    subgraph AI_Engine ["2. AI Vision & Detection Layer"]
+        MotionEngine["Human Motion Detection Engine"]
+        FaceEngine["Face Detection & Recognition Engine"]
+        
+        FrameExtractor -->|Video Frames| MotionEngine
+    end
+
+    subgraph Logic_Layer ["3. Security Policy & Decision Check"]
+        CheckMotion{"Human Motion Detected?"}
+        CheckFace{"Perform Face Recognition"}
+        DB_Faces[("Authorized Face Database\n(SQLite / Encodings)")]
+        CheckAuth{"Is Face Authorized?"}
+        
+        MotionEngine --> CheckMotion
+        CheckMotion -- "No" --> IgnoreFrame["Discard Frame / Resume Stream"]
+        CheckMotion -- "Yes" --> CheckFace
+        
+        DB_Faces <--> CheckFace
+        CheckFace --> CheckAuth
+    end
+
+    subgraph Action_Layer ["4. Incident Processing & Storage"]
+        LogAuthorized["Log Event: Authorized Personnel Entry"]
+        CaptureSnapshot["Capture Snapshot / Record Video Clip"]
+        SaveLog[("Event & Security Logs Database")]
+        
+        CheckAuth -- "Yes" --> LogAuthorized --> SaveLog
+        CheckAuth -- "No (Unknown/Stranger)" --> CaptureSnapshot
+        CaptureSnapshot --> SaveLog
+    end
+
+    subgraph Dispatcher_Layer ["5. Media Alert Integration Layer"]
+        AlertPayload["Format Alert Payload\n(Image + Timestamp + Location + Status)"]
+        TelegramAPI["Telegram Bot API Dispatcher"]
+        
+        CaptureSnapshot --> AlertPayload
+        AlertPayload --> TelegramAPI
+    end
+
+    subgraph Output_Layer ["6. Security HQ & Operative Destinations"]
+        AdminApp["S-Eye Desktop / Web / Mobile App"]
+        TelegramOperative["Operative Private Chat"]
+        TelegramGroup["Security HQ Group Chat"]
+        
+        TelegramAPI --> TelegramOperative
+        TelegramAPI --> TelegramGroup
+        SaveLog <--> AdminApp
+    end
+
+    classDef inputStyle fill:#1f2937,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef aiStyle fill:#1e1b4b,stroke:#8b5cf6,stroke-width:2px,color:#fff;
+    classDef logicStyle fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef alertStyle fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fff;
+    classDef dbStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+
+    class C1,C2,C3,FrameExtractor inputStyle;
+    class MotionEngine,FaceEngine aiStyle;
+    class CheckMotion,CheckFace,CheckAuth logicStyle;
+    class CaptureSnapshot,AlertPayload,TelegramAPI alertStyle;
+    class DB_Faces,SaveLog dbStyle;

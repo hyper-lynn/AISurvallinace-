@@ -1,0 +1,109 @@
+/*
+* Copyright (c) 2007, 浙江大华技术股份有限公司
+* All rights reserved.
+*
+* 文件名称：TPTypedef.h
+* 文件标识：参见配置管理计划书
+* 摘　　要：传输层预定义
+*
+* 当前版本：1.0
+* 作　　者：李明江
+* 完成日期：2007年4月28日
+
+*
+* 取代版本：1.0
+* 原作者　：
+* 完成日期：
+* 修订记录：
+*/
+#ifndef _TPETYPEDEF_H_
+#define _TPETYPEDEF_H_
+
+#if defined(_WIN32) || defined(WINCE) || defined(_WIN64)
+#include "AX_API/WinSock2i.h"
+#include <windows.h>
+#include <Ws2tcpip.h>
+
+#else
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>		/* TCP_NODELAY */
+#include <arpa/inet.h>	/* inet(3) functions */
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#ifndef MAC
+#include <asm/ioctls.h> // FIONBIO
+#endif
+#include <netdb.h>       // getaddrinfo()
+
+#define closesocket(S) close(S)
+#endif
+
+#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
+
+#if !defined(WINCE)
+#include <errno.h>
+#include <sys/types.h>
+#include <fcntl.h>		/* for nonblocking */
+#endif
+
+#include <string.h>
+#include "AX_API/platform.h"
+
+#define BUF_SIZE (64*1024)
+
+#if !defined(_WIN32) && !defined(_WIN64)
+#define INVALID_SOCKET		-1
+#endif
+
+#define MAX_ACCEPT_DLGS  20
+
+#define INVALID_LOCAL_ADDRESS				-10
+#define NOT_DEFINE_LOCAL_ADDRESS			-11
+
+#define TP_ERROR_BASE						-1
+#define TP_NORMAL_RET						(TP_ERROR_BASE + 1)
+#define TP_NOTHING_IS_DONE_RET				(TP_NORMAL_RET + 1)
+#define TP_ERROR_UNSUPPORT					(TP_ERROR_BASE - 100)
+#define TP_ERROR_BAD_CONNECTION				(TP_ERROR_BASE - 101)
+#define TP_ERROR_SET_NOBLOCKING_FAILED		(TP_ERROR_BASE - 102)
+
+#define TP_NET_ADDR_LEN		46	
+
+
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR		-1
+#endif
+
+#define TP_SELF	-11
+
+typedef struct
+{
+	sockaddr_storage	ipAddr;
+	socklen_t	ipAddrLen;
+	unsigned short	online;		//0:using 1:unusing
+	int				socket;
+    unsigned int	id;
+}client_list;
+
+typedef enum
+{
+	TP_SEND = 1,
+	TP_RECEIVE
+} TPType;
+
+typedef struct
+{
+	uint64 delay;
+	uint64 interval;
+	int repeat;
+	int context;
+
+	uint64 timeBegin;
+	uint64 lastTimeout;
+}tp_timer;
+
+#endif

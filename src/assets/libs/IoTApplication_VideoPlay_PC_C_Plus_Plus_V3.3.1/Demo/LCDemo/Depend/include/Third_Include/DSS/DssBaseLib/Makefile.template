@@ -1,0 +1,345 @@
+# Copyright(c) 2011, ZheJiang Dahua, All rights reserved.
+# zhou_jiangang@dahuatech.com
+#
+# Makefile.template
+#
+# Version : 1.4
+
+
+##########################################################
+#### User Makefile example for how to use this template
+
+# while use this template, define the following value, 
+# and include this template
+
+# # target, one of LIB_TARGET / DLL_TARGET / EXE_TARGET
+# LIB_TARGET = libdsl.a
+
+# # source file (C++/C)
+# SRCS += \
+#	$(wildcard *.cpp) \
+#	$(wildcard cpp_sub_dir/*.cpp) \
+#	$(wildcard c_sub_dir/*.c ) \
+
+# # (optional) precompile header
+# CXX_PCH = all_pch.h
+
+# # compile flag
+# CFLAGS += -g -pipe -Wall
+# CFLAGS += \
+#	-I.. \
+
+# # link flag
+# LDFLAGS +=
+
+# # include template
+# TOP_DIR?=..
+# include $(TOP_DIR)/Makefile.template
+
+
+#########################################################
+#### example to run make
+
+# common build, set DSL_BUILD_TARGET to target, ex : linux32-centos5-gcc-debug
+# then run " make "
+#
+# debug mode ( disable optimize ), run " make D=1 "
+# 
+# if not set DSL_BUILD_TARGET, you can directly set CROSS / MAC / ANDROID ... by hand
+# cross compile, compiler is /path/to/sh4-unknown-linux-g++
+# for example, cross build sh4 target, set " export CROSS=/path/to/sh4-unknown-linux- "
+# then run " make "
+#
+# if want to use llvm as compiler,
+# you can run " make GCC=/path/to/clang GXX=/path/to/clang++ "
+
+
+#########################################################
+#### Makefile.template content
+
+# <1> some flag, some platform special define
+ifeq ($(DSL_BUILD_TARGET),linux32-centos5-gcc)
+CROSS=$(DSL_CROSS_CENTOS5_32)
+else ifeq ($(DSL_BUILD_TARGET),linux32-centos5-gcc-debug)
+CROSS=$(DSL_CROSS_CENTOS5_32)
+D=1
+else ifeq ($(DSL_BUILD_TARGET),linux32-centos5-gcc-release)
+CROSS=$(DSL_CROSS_CENTOS5_32)
+D=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),linux32-centos6-gcc)
+CROSS=$(DSL_CROSS_CENTOS6_32)
+else ifeq ($(DSL_BUILD_TARGET),linux32-centos6-gcc-debug)
+CROSS=$(DSL_CROSS_CENTOS6_32)
+D=1
+else ifeq ($(DSL_BUILD_TARGET),linux32-centos6-gcc-release)
+CROSS=$(DSL_CROSS_CENTOS6_32)
+D=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),linux64-centos6-gcc)
+CROSS=$(DSL_CROSS_CENTOS6_64)
+else ifeq ($(DSL_BUILD_TARGET),linux64-centos6-gcc-debug)
+CROSS=$(DSL_CROSS_CENTOS6_64)
+D=1
+else ifeq ($(DSL_BUILD_TARGET),linux64-centos6-gcc-release)
+CROSS=$(DSL_CROSS_CENTOS6_64)
+D=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),sh4-linux-uclibc-gcc)
+CROSS=sh4-linux-uclibc-
+else ifeq ($(DSL_BUILD_TARGET),sh4-linux-uclibc-gcc-debug)
+CROSS=sh4-linux-uclibc-
+D=1
+else ifeq ($(DSL_BUILD_TARGET),sh4-linux-uclibc-gcc-release)
+CROSS=sh4-linux-uclibc-
+D=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),android-arm-gcc46)
+ANDROID=1
+else ifeq ($(DSL_BUILD_TARGET),android-arm-gcc46-debug)
+ANDROID=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),android-arm-gcc46-release)
+ANDROID=1
+D=0
+else ifneq ($(DSL_BUILD_TARGET),)
+ANDROID=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),mac32-llvmgcc42)
+MAC=1
+else ifeq ($(DSL_BUILD_TARGET),mac32-llvmgcc42-debug)
+MAC=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),mac32-llvmgcc42-release)
+MAC=1
+D=0
+else ifeq ($(DSL_BUILD_TARGET),mac32-xcode5)
+MAC_xcode_64=1
+else ifeq ($(DSL_BUILD_TARGET),mac32-xcode5-debug)
+MAC_xcode_64=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),mac32-xcode5-release)
+MAC_xcode_64=1
+D=0
+else ifneq ($(DSL_BUILD_TARGET),)
+MAC=0
+MAC_xcode_64=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),mac-armv7-xcode5)
+MAC_ARMV7=1
+else ifeq ($(DSL_BUILD_TARGET),mac-armv7-xcode5-debug)
+MAC_ARMV7=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),mac-armv7-xcode5-release)
+MAC_ARMV7=1
+D=0
+else ifneq ($(DSL_BUILD_TARGET),)
+MAC_ARMV7=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),mac-arm64-xcode5)
+MAC_ARM64=1
+else ifeq ($(DSL_BUILD_TARGET),mac-arm64-xcode5-debug)
+MAC_ARM64=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),mac-arm64-xcode5-release)
+MAC_ARM64=1
+D=0
+else ifneq ($(DSL_BUILD_TARGET),)
+MAC_ARM64=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),android-arm64-gcc49)
+ANDROID_64=1
+else ifeq ($(DSL_BUILD_TARGET),android-arm64-gcc49-debug)
+ANDROID_64=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),android-arm64-gcc49-release)
+ANDROID_64=1
+D=0
+else ifneq ($(DSL_BUILD_TARGET),)
+ANDROID_64=0
+endif
+
+ifeq ($(DSL_BUILD_TARGET),aarch64-linux-gcc483)
+AARCH64=1
+else ifeq ($(DSL_BUILD_TARGET),aarch64-linux-gcc483-debug)
+AARCH64=1
+D=1
+else ifeq ($(DSL_BUILD_TARGET),aarch64-linux-gcc483-release)
+AARCH64=1
+D=0
+else ifneq ($(DSL_BUILD_TARGET),)
+AARCH64=0
+endif
+
+
+# debug flag, use " make D=1 " to enable debug mode
+D?=0
+# cross compile flag, use " make CROSS=/path/to/sh4-unknown-linux- " 
+CROSS?=
+# MAC Module, use "make MAC=1" to compile MAC mode
+MAC?=0
+# iphone Module, use "make MAC_ARMV7=1" to compile iphone mode
+MAC_ARMV7?=0
+# iphone Module, 64bit use "make MAC_ARM64=1" to compile iphone mode
+MAC_ARM64?=0
+# android Module (arm) , use "make ANDROID=1" to compile android mode
+ANDROID?=0
+
+ifeq ($(MAC_xcode_64),1)
+CFLAGS += -stdlib=libc++
+CFLAGS += -arch x86_64
+CFLAGS += -DMAC -mmacosx-version-min=10.7 
+CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+CFLAGS += -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include
+CFLAGS += -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-migrator/sdk/MacOSX.sdk/usr/include
+endif
+
+ifeq ($(MAC),1)
+CFLAGS += -DMAC -arch i386 -mmacosx-version-min=10.4 
+CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk
+endif
+
+ifeq ($(MAC_ARMV7),1)
+CFLAGS += -stdlib=libc++
+CFLAGS += -DIOS -DMAC -arch armv7 -miphoneos-version-min=5.0
+#CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
+CFLAGS += -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path)
+LDFLAGS += -framework MobileCoreServices -framework CFNetwork -framework CoreFoundation
+endif
+
+ifeq ($(MAC_ARM64),1)
+CFLAGS += -stdlib=libc++
+CFLAGS += -DIOS -DMAC -arch arm64 -miphoneos-version-min=5.0
+#CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
+CFLAGS += -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path)
+LDFLAGS += -framework MobileCoreServices -framework CFNetwork -framework CoreFoundation
+endif
+
+
+ifeq ($(ANDROID),1)
+ANDROID_NDK_PATH=/opt/android-ndk-r9d
+CROSS = $(ANDROID_NDK_PATH)/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86/bin/arm-linux-androideabi-
+CFLAGS += -DANDROID -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -marm -march=armv5te -mtune=xscale
+CFLAGS += -msoft-float -mthumb -fno-strict-aliasing -finline-limit=64 -Wa,--noexecstack -Wformat -Werror=format-security
+CFLAGS += --sysroot=$(ANDROID_NDK_PATH)/platforms/android-3/arch-arm
+CFLAGS += -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/include -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/libs/armeabi/include
+LDFLAGS += -L$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.6/libs/armeabi
+LDFLAGS += -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -lc -lm
+endif
+
+ifeq ($(ANDROID_64),1)
+ANDROID_NDK_PATH=/opt/android-ndk-r10e
+CROSS = $(ANDROID_NDK_PATH)/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-
+CFLAGS += -DANDROID -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes
+CFLAGS += -fno-strict-aliasing -finline-limit=64 -Wa,--noexecstack -Wformat -Werror=format-security
+CFLAGS += --sysroot=$(ANDROID_NDK_PATH)/platforms/android-21/arch-arm64
+CFLAGS += -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.9/include -I$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a/include
+LDFLAGS += -L$(ANDROID_NDK_PATH)/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a
+LDFLAGS += -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -lc -lm
+endif
+
+ifeq ($(AARCH64),1)
+CROSS=aarch64-linux-gnu-4.8.3-
+CFLAGS += -DAARCH64
+endif
+
+
+# <2> some value define
+OBJS += $(patsubst %.cxx, %.o, $(filter %.cxx,$(SRCS)))
+OBJS += $(patsubst %.cpp, %.o, $(filter %.cpp,$(SRCS)))
+OBJS += $(patsubst %.cc, %.o, $(filter %.cc,$(SRCS)))
+OBJS += $(patsubst %.c, %.o, $(filter %.c,$(SRCS)))
+DEPS += $(patsubst %.o, %.d~, $(OBJS))
+
+GCC=$(CROSS)gcc
+GXX=$(CROSS)g++
+AR=$(CROSS)ar
+
+CFLAGS += -Wall
+ifeq ($(D),0)
+CFLAGS += -O2 -fno-strict-aliasing
+else
+FN_D=_d
+endif
+
+ifdef DLL_TARGET
+CFLAGS += -DPIC -fPIC
+endif
+
+
+# <3> target rule
+.PHONY : all clean
+
+all : $(LIB_TARGET) $(DLL_TARGET) $(EXE_TARGET)
+
+clean :
+	rm -f $(LIB_TARGET) $(DLL_TARGET) $(EXE_TARGET) $(OBJS) $(DEPS) $(CXX_PCH).gch
+
+ifdef CXX_PCH
+CFLAGS += -include $(CXX_PCH)
+DEPS += $(CXX_PCH).gch.d~
+
+$(OBJS) : $(CXX_PCH).gch
+
+$(CXX_PCH).gch : $(CXX_PCH)
+	rm -f $(CXX_PCH).gch
+	$(GXX) $(CFLAGS) -x c++-header -MMD -MT $(CXX_PCH).gch -MF $(CXX_PCH).gch.d~ -o $@ $<
+endif
+
+ifdef LIB_TARGET
+$(LIB_TARGET) : $(OBJS)
+	$(AR) crvs $(LIB_TARGET) $(OBJS)
+	@echo "Build [$(LIB_TARGET)] ( target_type : [$(DSL_BUILD_TARGET)] ) ok."
+endif
+
+ifdef DLL_TARGET
+$(DLL_TARGET) : $(OBJS)
+	$(GXX) -shared -rdynamic $(CFLAGS) -o $(DLL_TARGET) $(OBJS) $(LDFLAGS)
+	@echo "Build [$(DLL_TARGET)] ( target_type : [$(DSL_BUILD_TARGET)] ) ok."
+endif
+
+ifdef EXE_TARGET
+$(EXE_TARGET) : $(OBJS)
+	$(GXX) $(CFLAGS) -o $(EXE_TARGET) $(OBJS) $(LDFLAGS)
+	@echo "Build [$(EXE_TARGET)] ( target_type : [$(DSL_BUILD_TARGET)] ) ok."
+endif
+
+
+ifdef LINT_PLATFORM
+flint : 
+	$(foreach s,$(LINT_PLATFORM),\
+	mkdir -p $(TOP_DIR)/flexelint/report/$(s);\
+	echo "+os($(TOP_DIR)/flexelint/report/$(s)/report.txt)" > lintopt.tmp.lnt;\
+	flexelint $(INCS) -i$(TOP_DIR)/flexelint/$(s)/mkConfigs -i$(TOP_DIR)/flexelint/ShareConfigs $(TOP_DIR)/flexelint/$(s)/etc/lintopt.lnt lintopt.tmp.lnt $(LINT_SRCS);\
+	rm -f lintopt.tmp.lnt 1>/dev/null 2>/dev/null;)
+	
+flintclean : 
+	$(foreach s,$(LINT_PLATFORM),rm -rf $(TOP_DIR)/flexelint/report/$(s) 1>/dev/null 2>/dev/null;)
+endif
+
+
+.SUFFIXES : .cxx .cpp .cc .c
+
+.cxx.o :
+	$(GXX) $(CFLAGS) -MMD -MF $*.d~ -c -o $@ $<
+
+.cpp.o :
+	$(GXX) $(CFLAGS) -MMD -MF $*.d~ -c -o $@ $<
+
+.cc.o :
+	$(GXX) $(CFLAGS) -MMD -MF $*.d~ -c -o $@ $<
+
+.c.o :
+	$(GCC) $(CFLAGS) -MMD -MF $*.d~ -c -o $@ $<
+
+
+-include $(DEPS)
+

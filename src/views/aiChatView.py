@@ -89,6 +89,11 @@ def aiChatView():
             "media_url": ai_res.get("media_url")
         })
         set_messages(final_messages)
+        if page:
+            try:
+                page.update()
+            except Exception:
+                pass
 
     # Submit action handler from button
     async def send_message(e):
@@ -125,12 +130,38 @@ def aiChatView():
         # Media controls (Images & Videos)
         media_controls = []
         if media_type == "image" and media_url:
+            img_src = media_url
+            if not media_url.startswith(("http://", "https://", "data:image/")):
+                import base64
+                import os
+                found_path = None
+                candidates = [
+                    media_url,
+                    os.path.normpath(media_url),
+                    os.path.abspath(os.path.normpath(media_url)),
+                    os.path.join(os.getcwd(), media_url),
+                    os.path.join(os.getcwd(), os.path.normpath(media_url)),
+                    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "cache", os.path.basename(media_url))
+                ]
+                for cand in candidates:
+                    if cand and os.path.exists(cand):
+                        found_path = cand
+                        break
+                
+                if found_path:
+                    try:
+                        with open(found_path, "rb") as f:
+                            b64_str = base64.b64encode(f.read()).decode("utf-8")
+                            img_src = f"data:image/jpeg;base64,{b64_str}"
+                    except Exception as ex:
+                        print(f"Error converting local image to base64: {ex}")
+
             media_controls.append(
                 ft.Image(
-                    src=media_url,
-                    width=360,
+                    src=img_src,
+                    width=380,
                     height=260,
-                    fit=ft.BoxFit.COVER,
+                    fit=ft.BoxFit.CONTAIN,
                     border_radius=12
                 )
             )

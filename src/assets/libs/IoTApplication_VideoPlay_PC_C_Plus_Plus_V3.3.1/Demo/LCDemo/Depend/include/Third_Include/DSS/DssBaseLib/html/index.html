@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>DStatusServer</title>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" href="jstree/zTreeStyle.css" type="text/css" />
+		<script type='text/javascript' src="jstree/jquery-1.4.4.min.js"></script>
+		<script type='text/javascript' src="jstree/jquery.ztree.core-3.5.min.js"></script>
+		<script type='text/javascript' src="jstree/dir.oper.js"></script>
+		<style>
+			body,html{padding:0; margin:0;}
+			.main{padding:5px;}
+			.treeDiv{width:260px;height: 500px;min-height:500px;overflow:auto; float:left;background: #D0D1D3;}
+			.content{ margin-left: 270px;height: 500px;min-height:500px;border: 1px solid #E5E6E8;}
+			.content-section{height:100%;width:100%;}
+			.view-con{ border: 5px solid #FCF8DB;font-size: 51px;left: 30%;line-height: 300px; margin-top: 100px;position: absolute;text-align: center;top: 10%;vertical-align: middle;width: 50%;}
+		</style> 
+	</head> 
+	<body>
+		<div class="main">
+			<div class="treeDiv">
+				<ul id="treeId" class="ztree"></ul>
+			</div>
+			<div class="content">
+				<div id="textDiv" class="content-section">
+					<div class="view-con">内容展示区块</div>
+				</div>
+				<div id="iframeDiv" class="content-section" style="display:none;"></div>
+			</div>
+		</div>	
+	</body>
+	<script>
+		
+		
+		
+		$(window).resize(function(){
+			DirTree.resize();
+		})
+		DirTree.resize();
+		DirTree.init();
+	
+	
+	</script>
+</html>

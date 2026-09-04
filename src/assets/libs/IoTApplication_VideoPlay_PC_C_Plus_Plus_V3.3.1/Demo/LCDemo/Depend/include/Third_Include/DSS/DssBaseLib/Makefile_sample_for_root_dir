@@ -1,0 +1,38 @@
+# Copyright(c) 2011, ZheJiang Dahua, All rights reserved.
+# zhou_jiangang@dahuatech.com
+#
+# Makefile for DssBaseLib
+
+SUBPRJ = \
+	DOAXBase \
+	libdsl \
+	dslalien \
+	libdsl_ssl \
+
+SUBPRJ_CLEAN = $(foreach s,$(SUBPRJ),$(s)_clean)
+
+.PHONY : all clean test test_clean $(SUBPRJ) $(SUBPRJ_CLEAN)
+
+all : $(SUBPRJ)
+
+flint : 
+	$(foreach s,$(SUBPRJ),$(MAKE) -C $(s) flint;)
+	
+flintclean : 
+	$(foreach s,$(SUBPRJ),$(MAKE) -C $(s) flintclean;)
+
+clean : $(SUBPRJ_CLEAN)
+
+test :
+	$(MAKE) -C test
+
+test_clean :
+	$(MAKE) -C test clean
+
+	
+
+$(SUBPRJ) :
+	$(MAKE) -C $@
+
+$(SUBPRJ_CLEAN) :
+	$(MAKE) -C $(subst _clean,,$@) clean

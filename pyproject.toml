@@ -8,11 +8,17 @@ authors = [
     { name = "Lynn Myat Aung", email = "lynnmyat49@gmail.com" }
 ]
 dependencies = [
+    "faiss-cpu>=1.7.4",
+    "flet-camera>=0.86.1",
     "flet[all]>=0.85.3",
     "numpy>=1.26.0",
     "ollama>=0.6.2",
+    "onnxruntime-gpu>=1.19.0,<1.20.0",
     "opencv-python>=4.8.0",
     "pillow>=10.0.0",
+    "python-multipart>=0.0.32",
+    "torch",
+    "ultralytics",
 ]
 
 [dependency-groups]
@@ -27,6 +33,8 @@ org = "com.rangoonx.com"
 product = "Shadow EYE"
 company = "Rangoon X,Inc"
 copyright = "Copyright (C) 2026 by Rangoon X, Inc."
+flutter_build_args = ["--enable-experiment=native-assets"]
 
 [tool.flet.app]
 path = "src"
+module = "mobile_view"

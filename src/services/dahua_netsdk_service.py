@@ -26,11 +26,11 @@ class DahuaNetSDKService:
         if os.path.exists(env_path):
             load_dotenv(env_path)
 
-        self.ip = os.getenv("DAHUA_IP", "192.168.100.93")
+        self.ip = os.getenv("DAHUA_IP", "").strip()
         self.port = int(os.getenv("DAHUA_PORT", "37777"))
         self.user = os.getenv("DAHUA_USER") or os.getenv("DAHUA_P2P_USER", "admin")
-        self.password = os.getenv("DAHUA_PASS") or os.getenv("DAHUA_P2P_PASS", "12345asd@")
-        self.serial_number = os.getenv("DAHUA_SN") or os.getenv("DAHUA_P2P_SN", "8M0435CPAZ0E327")
+        self.password = os.getenv("DAHUA_PASS") or os.getenv("DAHUA_P2P_PASS", "")
+        self.serial_number = os.getenv("DAHUA_SN") or os.getenv("DAHUA_P2P_SN", "")
 
         self.netsdk = DahuaNetSDK.get_instance()
         self.login_handle = 0
@@ -51,6 +51,10 @@ class DahuaNetSDKService:
         target_port = port if port else self.port
         target_user = user if user else self.user
         target_pass = password if password else self.password
+
+        if not target_ip:
+            logger.debug("Dahua NetSDK Direct IP not configured in environment. Skipping auto-connect.")
+            return False
 
         if self.login_handle > 0:
             logger.info("Already logged in via Dahua NetSDK.")
@@ -87,6 +91,8 @@ class DahuaNetSDKService:
         """
         Generate sanitized RTSP URL for OpenCV VideoCapture frame acquisition.
         """
+        if not self.ip:
+            return ""
         import urllib.parse
         encoded_pass = urllib.parse.quote(self.password, safe="")
         return f"rtsp://{self.user}:{encoded_pass}@{self.ip}:{rtsp_port}/cam/realmonitor?channel={channel}&subtype={subtype}"

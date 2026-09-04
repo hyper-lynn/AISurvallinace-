@@ -1,0 +1,85 @@
+# Copyright(c) 2013, ZheJiang Dahua, All rights reserved.
+# zhou_jiangang@dahuatech.com
+#
+# Makefile template for qt project
+#
+# Version : 1.0
+
+##########################################################
+#### User Makefile example for how to use this template
+
+# while use this template, define the following value, 
+# and include common template and this template
+
+# common value, see Makefile.template
+# SRCS ....
+# CFLAGS ....
+# LDFLAGS ....
+
+# # Headers (no path) with Q_OBJECT that need moc
+# MOC_HEADERS += \
+# 	$(wildcard Q*.h) \
+
+# # UI files (no path) that need uic
+# UI_SRCS += \
+# 	$(wildcard *.ui ) \
+
+# # if Headers/UIs in other directory, add path with vpath
+# vpath %.h ./Export:./SubModel
+# vpath %.ui ./Uis:./SubModel/Uis
+
+# all uic/moc output file are store in ./GeneratedFiles directory
+
+# # include template
+# TOP_DIR?=..
+# include $(TOP_DIR)/Makefile.template
+# include $(TOP_DIR)/Makefile.template.qt
+
+#########################################################
+#### Makefile.template.qt content
+
+QT_DIR ?= /opt/qt4
+
+MOC ?= $(QT_DIR)/bin/moc
+UIC ?= $(QT_DIR)/bin/uic
+
+CFLAGS += \
+	-I$(QT_DIR)/include \
+
+# TODO : let user add it
+# LDFLAGS += \
+# 	-L$(QT_DIR)/lib -lQtGui -lQtCore
+
+MOC_SRCS = $(foreach h, $(MOC_HEADERS), GeneratedFiles/moc_$(basename $(h)).cpp)
+MOC_OBJS = $(patsubst %.cpp, %.o, $(MOC_SRCS))
+SRCS += $(MOC_SRCS)
+# OBJS += $(MOC_OBJS)
+
+UI_HEADERS = $(foreach h, $(UI_SRCS), GeneratedFiles/ui_$(basename $(h)).h)
+
+
+$(MOC_SRCS) : GeneratedFiles/moc_%.cpp : %.h
+	$(MOC) -o $@ $<
+
+$(UI_HEADERS) : GeneratedFiles/ui_%.h : %.ui
+	$(UIC) -o $@ $<
+
+$(OBJS) : $(UI_HEADERS)
+
+ifdef LIB_TARGET
+$(LIB_TARGET) : $(MOC_OBJS)
+endif
+
+ifdef DLL_TARGET
+$(DLL_TARGET) : $(MOC_OBJS)
+endif
+
+ifdef EXE_TARGET
+$(EXE_TARGET) : $(MOC_OBJS)
+endif
+
+clean : clean_qt
+
+clean_qt :
+	rm -f GeneratedFiles/*.h GeneratedFiles/*.cpp
+
